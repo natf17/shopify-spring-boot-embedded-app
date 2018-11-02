@@ -1,6 +1,7 @@
-package com.louismartin.security.configuration;
+package com.lm.security.configuration;
 
 import java.io.IOException;
+import java.util.Map;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -15,7 +16,13 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
+import org.springframework.web.filter.CorsFilter;
+
+import com.lm.security.filters.ShopifyExistingTokenFilter;
+import com.lm.security.filters.ShopifyOriginFilter;
+import com.lm.security.web.ShopifyOauth2AuthorizationRequestResolver;
 
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
@@ -23,27 +30,39 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	protected void configure(HttpSecurity http) throws Exception {
 		
 		http.addFilterAfter(new ShopifyExistingTokenFilter(), ExceptionTranslationFilter.class);
-		
+		http.addFilterAfter(new ShopifyOriginFilter(), CorsFilter.class);
 		
 		http
 	          .authorizeRequests()
-	          .mvcMatchers("/validate").permitAll()
-	          .anyRequest()
-	          .authenticated()
+	          	.mvcMatchers("/validate").permitAll()
+	          	.anyRequest().authenticated()
 	          .and()
-	          .oauth2Login();
+	          .oauth2Login()
+	          	.authorizationEndpoint().
+	          		authorizationRequestResolver(shopifyOauth2AuthorizationRequestResolver());
+	          
 	}
 	
+	 /* 		https://{shop}.myshopify.com/admin/oauth/authorize?
+	 * 			client_id={api_key}&
+	 * 			scope={scopes}&
+	 * 			redirect_uri={redirect_uri}&
+	 * 			state={nonce}
+	 */
 	@Bean
     public ClientRegistrationRepository clientRegistrationRepository() {
         return new InMemoryClientRegistrationRepository(this.shopifyClientRegistration());
     }
 	
+	private OAuth2AuthorizationRequestResolver shopifyOauth2AuthorizationRequestResolver() {
+		return new ShopifyOauth2AuthorizationRequestResolver();
+	}
+	
 	private ClientRegistration shopifyClientRegistration() {
 		
 		return null;
 		/*
-        return ClientRegistration.withRegistrationId("google")
+        return ClientRegistration.withRegistrationId("shopify")
             .clientId("google-client-id")
             .clientSecret("google-client-secret")
             .clientAuthenticationMethod(ClientAuthenticationMethod.BASIC)
@@ -62,25 +81,4 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	
 }
 
-class ShopifyExistingTokenFilter implements Filter {
 
-	@Override
-	public void doFilter(ServletRequest arg0, ServletResponse arg1, FilterChain arg2)
-			throws IOException, ServletException {
-		// attempts to find a token for this store, and if it's found, set the Authentication in SecurityContextHolder
-		// if not, simply continue
-		
-	}
-	
-}
-
-class ShopifyOriginFilter implements Filter {
-	@Override
-	public void doFilter(ServletRequest arg0, ServletResponse arg1, FilterChain arg2)
-			throws IOException, ServletException {
-		// makes sure this request comes from Shopify
-		// if it does not, throw exception
-		
-	}
-	
-}
