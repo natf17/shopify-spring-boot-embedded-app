@@ -39,7 +39,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	          .and()
 	          .oauth2Login()
 	          	.authorizationEndpoint().
-	          		authorizationRequestResolver(shopifyOauth2AuthorizationRequestResolver());
+	          		authorizationRequestResolver(shopifyOauth2AuthorizationRequestResolver())
+	          .and().redirectionEndpoint().baseUri("/login/app/oauth2/code");
 	          
 	}
 	
@@ -55,7 +56,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 	
 	private OAuth2AuthorizationRequestResolver shopifyOauth2AuthorizationRequestResolver() {
-		return new ShopifyOauth2AuthorizationRequestResolver();
+		return new ShopifyOauth2AuthorizationRequestResolver(clientRegistrationRepository(), "/login/app/oauth2/code");
 	}
 	
 	private ClientRegistration shopifyClientRegistration() {
@@ -67,7 +68,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .clientSecret("google-client-secret")
             .clientAuthenticationMethod(ClientAuthenticationMethod.BASIC)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .redirectUriTemplate("{baseUrl}/login/oauth2/code/{registrationId}")
+            .redirectUriTemplate("{baseUrl}/login/app/oauth2/code/{registrationId}")
             .scope("openid", "profile", "email", "address", "phone")
             .authorizationUri("https://accounts.google.com/o/oauth2/v2/auth")
             .tokenUri("https://www.googleapis.com/oauth2/v4/token")
