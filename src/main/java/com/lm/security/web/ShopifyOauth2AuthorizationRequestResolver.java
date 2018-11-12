@@ -5,23 +5,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 
 import org.springframework.security.crypto.keygen.Base64StringKeyGenerator;
 import org.springframework.security.crypto.keygen.StringKeyGenerator;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
-import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
-import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
-import org.springframework.security.web.RedirectStrategy;
 import org.springframework.security.web.util.UrlUtils;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import com.lm.security.service.TokenService;
 
 /*
  * This class is called by OAuth2RequestRedirectFilter
@@ -89,10 +86,12 @@ public class ShopifyOauth2AuthorizationRequestResolver implements OAuth2Authoriz
 
 		Map<String, Object> additionalParameters = new HashMap<>();
 		additionalParameters.put(OAuth2ParameterNames.REGISTRATION_ID, clientRegistration.getRegistrationId());
+		
+		
 
 		OAuth2AuthorizationRequest authorizationRequest = builder
 				.clientId(clientRegistration.getClientId())
-				.authorizationUri(clientRegistration.getProviderDetails().getAuthorizationUri())
+				.authorizationUri(this.generateAuthorizationUri(request, clientRegistration.getProviderDetails().getAuthorizationUri()))
 				.redirectUri(redirectUriStr)
 				.scopes(clientRegistration.getScopes())
 				.state(this.stateGenerator.generateKey())
@@ -103,12 +102,9 @@ public class ShopifyOauth2AuthorizationRequestResolver implements OAuth2Authoriz
 		// Save the OAuth2AuthorizationRequest
 		customAuthorizationRequestRepository.saveAuthorizationRequest(authorizationRequest, request);
 		
-
 				
-		// DO NOT redirect, build redirecturi: DefaultRedirectStrategy
-		String authorizationUri = authorizationRequest.getAuthorizationRequestUri();
-		
-		authorizationRedirectStrategy.saveRedirectAuthenticationUri(request, authorizationUri);
+		// DO NOT redirect, build redirecturi: DefaultRedirectStrategy		
+		authorizationRedirectStrategy.saveRedirectAuthenticationUris(request, authorizationRequest);
 		
 		
 		return null;
@@ -141,6 +137,29 @@ public class ShopifyOauth2AuthorizationRequestResolver implements OAuth2Authoriz
 		return UriComponentsBuilder.fromUriString(clientRegistration.getRedirectUriTemplate())
 				.buildAndExpand(uriVariables)
 				.toUriString();
+	}
+	
+	
+	/*
+	 * Expects a shop request parameter to generate the authorization uri
+	 */
+	private String generateAuthorizationUri(HttpServletRequest request, String authorizationUriTemplate) {
+		String shopName = request.getParameter(TokenService.SHOP_ATTRIBUTE_NAME);
+		
+		if(shopName == null || shopName.isEmpty()) {
+			throw new RuntimeException("Shop name not found in request paramters");
+		}
+		
+		Map<String, String> uriVariables = new HashMap<>();
+		uriVariables.put("shop", shopName);
+		
+		String authorizationUri = UriComponentsBuilder
+							.fromHttpUrl(authorizationUriTemplate)
+							.buildAndExpand(uriVariables)
+							.toUriString();
+		
+		
+		return authorizationUri;
 	}
 
 }

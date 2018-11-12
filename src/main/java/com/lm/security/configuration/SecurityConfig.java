@@ -22,6 +22,8 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.filter.CorsFilter;
@@ -39,7 +41,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	protected void configure(HttpSecurity http) throws Exception {
 		
 		http.addFilterAfter(new ShopifyExistingTokenFilter("/install/**"), ExceptionTranslationFilter.class);
-		http.addFilterAfter(new ShopifyOriginFilter(), CorsFilter.class);
+		http.addFilterAfter(new ShopifyOriginFilter(), ShopifyExistingTokenFilter.class);
 		
 		http
 	          .authorizeRequests()
@@ -84,25 +86,19 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	
 	private ClientRegistration shopifyClientRegistration() {
 		
-		return null;
-		/*
+
         return ClientRegistration.withRegistrationId("shopify")
-            .clientId("google-client-id")
-            .clientSecret("google-client-secret")
-            .clientAuthenticationMethod(ClientAuthenticationMethod.BASIC)
+            .clientId("zz")
+            .clientSecret("zz")
+            .clientAuthenticationMethod(ClientAuthenticationMethod.POST)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
             .redirectUriTemplate("{baseUrl}/login/app/oauth2/code/{registrationId}")
-            .scope("openid", "profile", "email", "address", "phone")
-            .authorizationUri("https://accounts.google.com/o/oauth2/v2/auth")
-            .tokenUri("https://www.googleapis.com/oauth2/v4/token")
-            .userInfoUri("https://www.googleapis.com/oauth2/v3/userinfo")
-            .userNameAttributeName(IdTokenClaimNames.SUB)
-            .jwkSetUri("https://www.googleapis.com/oauth2/v3/certs")
-            .clientName("Google")
-            .build(); */
+            .scope("read_inventory", "write_inventory", "read_products", "write_products")
+            .authorizationUri("https://{shop}.myshopify.com/admin/oauth/authorize")
+            .clientName("Shopify")
+            .build();
     }
 
-	
 }
 
 

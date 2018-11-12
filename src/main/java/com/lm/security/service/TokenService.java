@@ -13,7 +13,7 @@ import com.lm.security.repository.TokenRepository;
 @Service
 public class TokenService {
 	
-	private static final String SHOP_ATTRIBUTE_NAME = "shop";
+	public static final String SHOP_ATTRIBUTE_NAME = "shop";
 	
 	private TokenRepository tokenRepository;
 	

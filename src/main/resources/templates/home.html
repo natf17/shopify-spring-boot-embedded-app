@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head lang="en">
+  <script src="https://cdn.shopify.com/s/assets/external/app.js"></script>
+  
+  <script th:inline="javascript">
+  
+		
+		
+		var redirectFromParentPath = /*[[${app.api_key}]]*/ 'ERROR';
+		var redirectFromIFramePath = /*[[${app.api_key}]]*/ 'ERROR';;
+			
+		
+		
+		  
+		  // If the current window is the 'parent', change the URL by setting location.href
+		  if (window.top == window.self) {
+			  console.log("In parent" + "url: " + redirectFromParentPath);
+		    window.location.assign(redirectFromParentPath);
+		
+		  // If the current window is the 'child', change the parent's URL with ShopifyApp.redirect
+		  } else {
+			  console.log("In child" + "url: " + redirectFromIFramePath);
+		    ShopifyApp.redirect(redirectFromIFramePath);
+		  }
+		</script>
+  
+  
+  
+  <title>LouisMartinApp</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+ 
+</head>
+<body>
+<h1>Hello</h1>
+ 
+</body>
+</html>

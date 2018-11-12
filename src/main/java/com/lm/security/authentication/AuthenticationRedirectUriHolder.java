@@ -11,10 +11,10 @@ public class AuthenticationRedirectUriHolder implements Authentication {
 	 * 
 	 */
 	private static final long serialVersionUID = -7065164088368102238L;
-	private String authenticationRedirectUri;
+	private RedirectUris redirectUris;
 	
-	public AuthenticationRedirectUriHolder(String authenticationRedirectUri) {
-		this.authenticationRedirectUri = authenticationRedirectUri;
+	public AuthenticationRedirectUriHolder(String parentRedirectUri, String iFrameRedirectUri) {
+		this.redirectUris = new RedirectUris(parentRedirectUri, iFrameRedirectUri);
 	}
 
 	@Override
@@ -40,7 +40,7 @@ public class AuthenticationRedirectUriHolder implements Authentication {
 	// only method of interest
 	@Override
 	public Object getPrincipal() {
-		return this.authenticationRedirectUri;
+		return this.redirectUris;
 	}
 
 	@Override
@@ -51,6 +51,26 @@ public class AuthenticationRedirectUriHolder implements Authentication {
 	@Override
 	public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
 
+	}
+	
+	class RedirectUris {
+		private final String parentRedirectUri;
+		private final String iFrameRedirectUri;
+		
+		public RedirectUris(String parentRedirectUri, String iFrameRedirectUri) {
+			this.parentRedirectUri = parentRedirectUri;
+			this.iFrameRedirectUri = iFrameRedirectUri;
+			
+		}
+		
+		public String getParentRedirectUri() {
+			return this.parentRedirectUri;
+		}
+		
+		public String getIFrameRedirectUri() {
+			return this.iFrameRedirectUri;
+		}
+		
 	}
 
 }
