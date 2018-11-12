@@ -14,7 +14,7 @@ public class ShopifyRedirectStrategy extends DefaultRedirectStrategy {
 		String redirectUrl = super.calculateRedirectUrl(request.getContextPath(), url);
 		
 		SecurityContextHolder.getContext().setAuthentication(new AuthenticationRedirectUriHolder(redirectUrl));
-		
+		// if not set...
 	}
 
 }

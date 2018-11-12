@@ -9,6 +9,18 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import com.lm.security.authentication.ShopifyOriginToken;
+
+/*
+ * This filter checks the request to see if it came from Shopify.
+ * 
+ * If it did, it populates the SecurityContext with a ShopifyOriginToken.
+ * 
+ * If not, the ShopifyOriginToken is not set.
+ * 
+ */
 public class ShopifyOriginFilter implements Filter {
 	
 	@Override
@@ -18,10 +30,12 @@ public class ShopifyOriginFilter implements Filter {
 		System.out.println("ShopifyOriginFilter applied.");
 		
 		if(isShopifyRequest(request)) {
-			chain.doFilter(request, response);
+			SecurityContextHolder.getContext().setAuthentication(new ShopifyOriginToken(true));
 		}
 		
-		
+		chain.doFilter(request, response);
+
+
 	}
 	
 	/*
