@@ -30,6 +30,7 @@ public class ShopifyOriginFilter implements Filter {
 		System.out.println("ShopifyOriginFilter applied.");
 		
 		if(isShopifyRequest(request)) {
+			System.out.println("Setting ShopifyOriginToken");
 			SecurityContextHolder.getContext().setAuthentication(new ShopifyOriginToken(true));
 		}
 		

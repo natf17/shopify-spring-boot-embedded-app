@@ -9,6 +9,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -37,11 +38,14 @@ import com.lm.security.web.ShopifyOauth2AuthorizationRequestResolver;
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	
+	@Autowired
+	private TokenService tokenService;
+	
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
-		
-		http.addFilterAfter(new ShopifyExistingTokenFilter("/install/**"), ExceptionTranslationFilter.class);
-		http.addFilterAfter(new ShopifyOriginFilter(), ShopifyExistingTokenFilter.class);
+
+		http.addFilterAfter(new ShopifyOriginFilter(), ExceptionTranslationFilter.class);
+		http.addFilterAfter(new ShopifyExistingTokenFilter(this.tokenService, "/install/**"), ShopifyOriginFilter.class);
 		
 		http
 	          .authorizeRequests()
@@ -95,6 +99,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .redirectUriTemplate("{baseUrl}/login/app/oauth2/code/{registrationId}")
             .scope("read_inventory", "write_inventory", "read_products", "write_products")
             .authorizationUri("https://{shop}.myshopify.com/admin/oauth/authorize")
+            .tokenUri("https://{shop}.myshopify.com/admin/oauth/access_token")
             .clientName("Shopify")
             .build();
     }

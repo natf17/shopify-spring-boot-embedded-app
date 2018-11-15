@@ -33,7 +33,8 @@ public class ShopifyExistingTokenFilter extends GenericFilterBean {
 	private TokenService tokenService;
 	private AntPathRequestMatcher requestMatcher;
 	
-	public ShopifyExistingTokenFilter(String loginEndpoint) {
+	public ShopifyExistingTokenFilter(TokenService tokenService, String loginEndpoint) {
+		this.tokenService = tokenService;
 		this.requestMatcher = new AntPathRequestMatcher(loginEndpoint);
 		
 	}
@@ -50,15 +51,21 @@ public class ShopifyExistingTokenFilter extends GenericFilterBean {
 			return;
 
 		}
+		
+		System.out.println("Applying ShopifyExistingTokenFilter");
 
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		ShopifyOriginToken originToken = null;
 		OAuth2PersistedAuthenticationToken oauth2Token = null;
 		
 		if(auth != null && auth instanceof ShopifyOriginToken) {
+			System.out.println("ShopifyExistingTokenFilter found ShopifyOriginToken in the Authentication");
+
 			originToken = (ShopifyOriginToken)auth;
 			
 			if(originToken.isFromShopify()) {
+				System.out.println("... and it IS from Shopify");
+
 				oauth2Token = this.getToken(req);
 				if(oauth2Token != null) {
 					this.setToken(oauth2Token);
@@ -76,12 +83,15 @@ public class ShopifyExistingTokenFilter extends GenericFilterBean {
 	}
 	
 	private OAuth2PersistedAuthenticationToken getToken(HttpServletRequest request) {
+		System.out.println("Looking for token");
+
 		
 		return tokenService.findTokenForRequest(request);
 	}
 	
 	@Override
 	protected void initFilterBean() throws ServletException {
+		System.out.println("Initializing filter bean");
 		this.tokenService = WebApplicationContextUtils.
 			    getRequiredWebApplicationContext(this.getServletContext()).getBean(TokenService.class);
 		

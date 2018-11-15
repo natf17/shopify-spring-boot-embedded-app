@@ -30,6 +30,8 @@ public class TokenService {
 	}
 	
 	public OAuth2PersistedAuthenticationToken findTokenForRequest(HttpServletRequest request) {
+		System.out.println("TokenService looking for token");
+
 		String shopName = request.getParameter(SHOP_ATTRIBUTE_NAME);
 		OAuth2AccessToken rawToken = null;
 		
@@ -37,22 +39,30 @@ public class TokenService {
 			rawToken = this.tokenRepository.findTokenForRequest(shopName);
 			
 			if (rawToken != null) {
-				return oAuth2LoginAuthenticationTokenFromAccessToken(request, rawToken);
+				System.out.println("Token found");
+				return this.oAuth2LoginAuthenticationTokenFromAccessToken(request, rawToken);
 			}
 			
 		}
+		System.out.println("Shop not provided/found");
 		
 		return null;
 	}
 	
 	private OAuth2PersistedAuthenticationToken oAuth2LoginAuthenticationTokenFromAccessToken(HttpServletRequest request, OAuth2AccessToken rawToken) {
+		System.out.println("Extracting raw encrypted token");
+
 		String encryptedToken = rawToken.getTokenValue();
 		
+		System.out.println("Decrypting token");
+
 		String decryptedToken = new String(encryptor.decrypt(encryptedToken.getBytes()));
 		
 		
 		OAuth2AccessToken newAccessToken = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, decryptedToken, null, null);
 		
+		System.out.println("Returning an OAuth2PersistedAuthenticationToken");
+
 		return new OAuth2PersistedAuthenticationToken(request.getParameter(SHOP_ATTRIBUTE_NAME), newAccessToken);
 		
 		

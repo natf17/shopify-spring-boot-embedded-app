@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class ShopifyTokenRepositoryImpl implements TokenRepository {
 	
-	private static String SELECT_TOKEN_FOR_SHOP = "SELECT (access_token, scopes) FROM StoreOAuthTokens WHERE shop = ?";
+	private static String SELECT_TOKEN_FOR_SHOP = "SELECT access_token, scope FROM StoreAccessTokens WHERE shop=?";
 	
 	private JdbcTemplate jdbc;
 	
@@ -25,13 +26,15 @@ public class ShopifyTokenRepositoryImpl implements TokenRepository {
 
 	@Override
 	public OAuth2AccessToken findTokenForRequest(String shop) {
-		
+		System.out.println("ShopifyTokenRepositoryImpl looking for token for " + shop);
 		OAuth2AccessToken token = null;
 		
 		try {
 			token = jdbc.queryForObject(SELECT_TOKEN_FOR_SHOP, new StoreTokensMapper(), shop);
 		} catch(EmptyResultDataAccessException ex) {
 			token = null;
+			System.out.println("No token found");
+
 		}
 
 		return token;
