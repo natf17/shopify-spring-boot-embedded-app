@@ -15,7 +15,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class ShopifyTokenRepositoryImpl implements TokenRepository {
 	
-	private static String SELECT_TOKEN_FOR_SHOP = "SELECT access_token, scope FROM StoreAccessTokens WHERE shop=?";
+	private static String SELECT_TOKEN_FOR_SHOP = "SELECT access_token, salt FROM StoreAccessTokens WHERE shop=?";
 	
 	private JdbcTemplate jdbc;
 	
@@ -25,9 +25,9 @@ public class ShopifyTokenRepositoryImpl implements TokenRepository {
 	}
 
 	@Override
-	public OAuth2AccessToken findTokenForRequest(String shop) {
+	public EncryptedTokenAndSalt findTokenForRequest(String shop) {
 		System.out.println("ShopifyTokenRepositoryImpl looking for token for " + shop);
-		OAuth2AccessToken token = null;
+		EncryptedTokenAndSalt token = null;
 		
 		try {
 			token = jdbc.queryForObject(SELECT_TOKEN_FOR_SHOP, new StoreTokensMapper(), shop);
@@ -40,18 +40,19 @@ public class ShopifyTokenRepositoryImpl implements TokenRepository {
 		return token;
 	}
 	
-	class StoreTokensMapper implements RowMapper<OAuth2AccessToken> {
+	class StoreTokensMapper implements RowMapper<EncryptedTokenAndSalt> {
 
 		@Override
-		public OAuth2AccessToken mapRow(ResultSet rs, int arg) throws SQLException {
+		public EncryptedTokenAndSalt mapRow(ResultSet rs, int arg) throws SQLException {
 			String encryptedToken = rs.getString("access_token");
+			String salt = rs.getString("salt");
 			
-			OAuth2AccessToken newAccessToken = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, encryptedToken, null, null);
-
-			
-			return newAccessToken;
+			return new EncryptedTokenAndSalt(encryptedToken, salt);
+		
 		}
 		
 	}
+	
+
 
 }

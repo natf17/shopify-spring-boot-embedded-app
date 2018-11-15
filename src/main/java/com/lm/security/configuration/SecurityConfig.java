@@ -18,6 +18,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.encrypt.BytesEncryptor;
 import org.springframework.security.crypto.encrypt.Encryptors;
+import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.security.crypto.keygen.KeyGenerators;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -29,6 +30,7 @@ import org.springframework.security.web.access.ExceptionTranslationFilter;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.filter.CorsFilter;
 
+import com.lm.security.authentication.CipherPassword;
 import com.lm.security.filters.ShopifyExistingTokenFilter;
 import com.lm.security.filters.ShopifyOriginFilter;
 import com.lm.security.service.TokenService;
@@ -62,14 +64,30 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	
 
 	@Bean
-	BytesEncryptor bytesEncryptor(@Value("${lm.security.cipher.password}") String password) {
-    
-		String salt = KeyGenerators.string().generateKey(); // generates a random 8-byte salt that is then hex-encoded
-    
-		BytesEncryptor bytesEncryptor = Encryptors.standard(password, salt);
-    
+	CipherPassword cipherPassword(@Value("${lm.security.cipher.password}") String password) {
+		return new CipherPassword(password);
+	}
+	
+	
+	/*
+	TextEncryptor bytesEncryptor(@Value("${lm.security.cipher.password}") String password, @Value("${lm.security.cipher.salt}")String salt) {
+		
+		String salt2 = KeyGenerators.string().generateKey(); // generates a random 8-byte salt that is then hex-encoded
+		
+		System.out.println(password);
+		System.out.println(salt);
+		
+		TextEncryptor bytesEncryptor = Encryptors.queryableText(password, salt2);
+		
+		String enc = bytesEncryptor.encrypt("haha");
+		System.out.println("haha");
+		System.out.println("encyrpted: " + enc);
+		System.out.println("decrypted: " + bytesEncryptor.decrypt(enc));
+		
 		return bytesEncryptor;
 	}
+	
+	*/
 	
 	
 	 /* 		https://{shop}.myshopify.com/admin/oauth/authorize?

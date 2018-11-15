@@ -89,14 +89,6 @@ public class ShopifyExistingTokenFilter extends GenericFilterBean {
 		return tokenService.findTokenForRequest(request);
 	}
 	
-	@Override
-	protected void initFilterBean() throws ServletException {
-		System.out.println("Initializing filter bean");
-		this.tokenService = WebApplicationContextUtils.
-			    getRequiredWebApplicationContext(this.getServletContext()).getBean(TokenService.class);
-		
-	}
-	
 	
 	
 }
