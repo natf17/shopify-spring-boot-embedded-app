@@ -27,12 +27,13 @@ import com.lm.security.service.TokenService;
  */
 public class ShopifyOauth2AuthorizationRequestResolver implements OAuth2AuthorizationRequestResolver {
 	private static final String SHOPIFY_REGISTRATION_ID = "shopify";
+	public static final String SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN = "shop"; // must match template variable in ClientRegistration token_uri
 	
 	private ClientRegistrationRepository clientRegistrationRepository;
 	private AntPathRequestMatcher authorizationRequestMatcher;
 	private final StringKeyGenerator stateGenerator = new Base64StringKeyGenerator(Base64.getUrlEncoder());
 	private final ShopifyRedirectStrategy authorizationRedirectStrategy = new ShopifyRedirectStrategy();
-	ShopifyHttpSessionOAuth2AuthorizationRequestRepository customAuthorizationRequestRepository = new ShopifyHttpSessionOAuth2AuthorizationRequestRepository();
+	private final ShopifyHttpSessionOAuth2AuthorizationRequestRepository customAuthorizationRequestRepository = new ShopifyHttpSessionOAuth2AuthorizationRequestRepository();
 
 	
 	public ShopifyOauth2AuthorizationRequestResolver(ClientRegistrationRepository clientRegistrationRepository,
@@ -52,7 +53,11 @@ public class ShopifyOauth2AuthorizationRequestResolver implements OAuth2Authoriz
 		
 		// extract the registrationId (ex: "shopify")
 		String registrationId;
+		System.out.println("OAuth2AuthorizationRequestRedirectFilter: ShopifyOauth2AuthorizationRequestResolver");
+		
+		System.out.println("Is there a match with " + this.authorizationRequestMatcher.getPattern());
 		if (this.authorizationRequestMatcher.matches(request)) {
+			System.out.println("Match for ShopifyOauth2AuthorizationRequestResolver");
 			registrationId = this.authorizationRequestMatcher
 					.extractUriTemplateVariables(request).get("registrationId");
 		} else {
@@ -63,11 +68,17 @@ public class ShopifyOauth2AuthorizationRequestResolver implements OAuth2Authoriz
 			return null;
 		}
 		
+		System.out.println("Registration id " + registrationId);
+
+		System.out.println("Searching for a ClientRegistration for " + registrationId);
 		// obtain a ClientRegistration for extracted registrationId
 		ClientRegistration clientRegistration = this.clientRegistrationRepository.findByRegistrationId(registrationId);
 		if (clientRegistration == null) {
 			throw new IllegalArgumentException("Invalid Client Registration: " + registrationId);
 		}
+		
+		System.out.println("Found a ClientRegistration for " + registrationId);
+
 		
 		// only the Authorization code grant is accepted
 		OAuth2AuthorizationRequest.Builder builder;
@@ -81,14 +92,17 @@ public class ShopifyOauth2AuthorizationRequestResolver implements OAuth2Authoriz
 		
 		
 		
-		
+		System.out.println("Expanding the redirectUri...");
 		String redirectUriStr = this.expandRedirectUri(request, clientRegistration);
+
+		System.out.println("... " + redirectUriStr);
 
 		Map<String, Object> additionalParameters = new HashMap<>();
 		additionalParameters.put(OAuth2ParameterNames.REGISTRATION_ID, clientRegistration.getRegistrationId());
-		
+		additionalParameters.put(SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN, this.getShopName(request));
 		
 
+		System.out.println("Building the OAuth2AuthorizationRequest");
 		OAuth2AuthorizationRequest authorizationRequest = builder
 				.clientId(clientRegistration.getClientId())
 				.authorizationUri(this.generateAuthorizationUri(request, clientRegistration.getProviderDetails().getAuthorizationUri()))
@@ -99,6 +113,7 @@ public class ShopifyOauth2AuthorizationRequestResolver implements OAuth2Authoriz
 				.build();
 
 
+		System.out.println("Delegating to ClientRegistrationRepository");
 		// Save the OAuth2AuthorizationRequest
 		customAuthorizationRequestRepository.saveAuthorizationRequest(authorizationRequest, request);
 		
@@ -106,6 +121,7 @@ public class ShopifyOauth2AuthorizationRequestResolver implements OAuth2Authoriz
 		// DO NOT redirect, build redirecturi: DefaultRedirectStrategy		
 		authorizationRedirectStrategy.saveRedirectAuthenticationUris(request, authorizationRequest);
 		
+		System.out.println("ShopifyOauth2AuthorizationRequestResolver resolve(req) returning");
 		
 		return null;
 	}
@@ -144,11 +160,8 @@ public class ShopifyOauth2AuthorizationRequestResolver implements OAuth2Authoriz
 	 * Expects a shop request parameter to generate the authorization uri
 	 */
 	private String generateAuthorizationUri(HttpServletRequest request, String authorizationUriTemplate) {
-		String shopName = request.getParameter(TokenService.SHOP_ATTRIBUTE_NAME);
-		
-		if(shopName == null || shopName.isEmpty()) {
-			throw new RuntimeException("Shop name not found in request paramters");
-		}
+		System.out.println("Received: " + authorizationUriTemplate);
+		String shopName = this.getShopName(request);
 		
 		Map<String, String> uriVariables = new HashMap<>();
 		uriVariables.put("shop", shopName);
@@ -158,8 +171,19 @@ public class ShopifyOauth2AuthorizationRequestResolver implements OAuth2Authoriz
 							.buildAndExpand(uriVariables)
 							.toUriString();
 		
-		
+		System.out.println("Returning: " + authorizationUri);
+
 		return authorizationUri;
+	}
+	
+	private String getShopName(HttpServletRequest request) {
+		String shopName = request.getParameter(TokenService.SHOP_ATTRIBUTE_NAME);
+		
+		if(shopName == null || shopName.isEmpty()) {
+			throw new RuntimeException("Shop name not found in request paramters");
+		}
+		
+		return shopName;
 	}
 
 }

@@ -3,6 +3,7 @@ package com.lm.security.web;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -19,12 +20,16 @@ public class ShopifyRedirectStrategy extends DefaultRedirectStrategy {
 	public final String I_FRAME_REDIRECT_URI = "/oauth/authorize";
 
 	public void saveRedirectAuthenticationUris(HttpServletRequest request, OAuth2AuthorizationRequest authorizationRequest) {
-		
-		String authorizationUri = authorizationRequest.getAuthorizationRequestUri();
+		System.out.println("ShopifyRedirectStrategy calculating the redirect uris");
+
+		String authorizationUri = authorizationRequest.getAuthorizationUri();
 
 		String parentFrameRedirectUrl = super.calculateRedirectUrl(request.getContextPath(), authorizationUri);
-				
+		System.out.println("parentFrameRedirectUrl: " + parentFrameRedirectUrl);
+
 		
+		System.out.println("Setting AuthenticationRedirectUriHolder as Authentication");
+		// The AuthenticationRedirectUriHolder's isAuthenticated() will return true to allow request to pass through filters 
 		SecurityContextHolder.getContext().setAuthentication(new AuthenticationRedirectUriHolder(
 																addRedirectParams(parentFrameRedirectUrl, authorizationRequest), 
 																addRedirectParams(I_FRAME_REDIRECT_URI, authorizationRequest)
@@ -42,22 +47,38 @@ public class ShopifyRedirectStrategy extends DefaultRedirectStrategy {
 	 * 4. state
 	 */
 	private String addRedirectParams(String uri, OAuth2AuthorizationRequest authorizationRequest) {
-		
 		LinkedMultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
 		queryParams.add("client_id", authorizationRequest.getClientId());
 		queryParams.add("redirect_uri", authorizationRequest.getRedirectUri());
-		queryParams.addAll("scope", new ArrayList<>(authorizationRequest.getScopes()));
+		queryParams.add("scope", concatenateListIntoCommaString(new ArrayList<>(authorizationRequest.getScopes())));
 		queryParams.add("state", "nonce");
 		
-		
-		
-		return UriComponentsBuilder
-								.fromPath(uri)
+		String re = UriComponentsBuilder
+								.fromUriString(uri)
 								.queryParams(queryParams)
 								.build()
 								.toString();
+		
+		System.out.println(re);
+		return re;
 
-
+	}
+	
+	public static String concatenateListIntoCommaString(List<String> pieces) {
+		StringBuilder builder = new StringBuilder();
+		
+		if(pieces == null || pieces.size() < 1) {
+			throw new RuntimeException("The provided List must contain at least one element");
+		}
+		pieces.stream()
+					.forEach(e -> {
+						builder.append(e);
+						builder.append(",");
+					});
+		
+		
+		
+		return builder.substring(0, builder.length() - 1);
 	}
 
 }

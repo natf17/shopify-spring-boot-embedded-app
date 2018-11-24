@@ -3,17 +3,17 @@
 <head lang="en">
   <script src="https://cdn.shopify.com/s/assets/external/app.js"></script>
   
-  <script th:inline="javascript">
   
+  <script th:inline="text">
+  
+  /*<![CDATA[*/
 		
-		
-		var redirectFromParentPath = /*[[${app.api_key}]]*/ 'ERROR';
-		var redirectFromIFramePath = /*[[${app.api_key}]]*/ 'ERROR';;
-			
+		var redirectFromParentPath = '[(${#authentication.principal.parentRedirectUri})]';
+		var redirectFromIFramePath = '[(${#authentication.principal.iFrameRedirectUri})]';
 		
 		
 		  
-		  // If the current window is the 'parent', change the URL by setting location.href
+		  // If the current window is the 'parent', change the URL by setting location.href parentRedirectUri
 		  if (window.top == window.self) {
 			  console.log("In parent" + "url: " + redirectFromParentPath);
 		    window.location.assign(redirectFromParentPath);
@@ -23,6 +23,8 @@
 			  console.log("In child" + "url: " + redirectFromIFramePath);
 		    ShopifyApp.redirect(redirectFromIFramePath);
 		  }
+		  
+	/*]]>*/
 		</script>
   
   

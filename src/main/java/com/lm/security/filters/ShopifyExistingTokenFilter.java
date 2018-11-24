@@ -74,11 +74,14 @@ public class ShopifyExistingTokenFilter extends GenericFilterBean {
 			}
 		}
 		
+		System.out.println("Going to next filter");
 		chain.doFilter(request, response);
 		
 	}
 	
 	private void setToken(OAuth2PersistedAuthenticationToken oauth2Token) {
+		System.out.println("Setting OAuth2PersistedAuthenticationToken as Authentication");
+
 		SecurityContextHolder.getContext().setAuthentication(oauth2Token);
 	}
 	

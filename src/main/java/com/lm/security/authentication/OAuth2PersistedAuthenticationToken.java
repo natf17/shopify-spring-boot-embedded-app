@@ -6,7 +6,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 
-public class OAuth2PersistedAuthenticationToken implements Authentication {
+public class OAuth2PersistedAuthenticationToken extends AuthenticationRedirectUriHolder {
 	
 	/**
 	 * 
@@ -17,6 +17,8 @@ public class OAuth2PersistedAuthenticationToken implements Authentication {
 	private String storeName;
 	
 	public OAuth2PersistedAuthenticationToken(String storeName, OAuth2AccessToken token) {
+		// redirects will not run for an authenticated user
+		super("","");
 		this.isAuthenticated = true;
 		this.token = token;
 		this.storeName = storeName;
@@ -47,11 +49,6 @@ public class OAuth2PersistedAuthenticationToken implements Authentication {
 
 	@Override
 	public Object getDetails() {
-		return null;
-	}
-
-	@Override
-	public Object getPrincipal() {
 		return null;
 	}
 
