@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.filter.GenericFilterBean;
 
 import com.lm.security.authentication.OAuth2PersistedAuthenticationToken;
@@ -24,7 +23,7 @@ import com.lm.security.service.TokenService;
  * If it did, this filter attempts to find a token for the store.
  * If there is no token, the SecurityContextHolder's Authentication is left untouched.
  * 
- * If the request did not come from Shopify, the request came from Shopify, the SecurityContextHolder's Authentication is left untouched.
+ * If the request did not come from Shopify, the SecurityContextHolder's Authentication is left untouched.
 
  */
 
@@ -52,19 +51,16 @@ public class ShopifyExistingTokenFilter extends GenericFilterBean {
 
 		}
 		
-		System.out.println("Applying ShopifyExistingTokenFilter");
 
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		ShopifyOriginToken originToken = null;
 		OAuth2PersistedAuthenticationToken oauth2Token = null;
 		
 		if(auth != null && auth instanceof ShopifyOriginToken) {
-			System.out.println("ShopifyExistingTokenFilter found ShopifyOriginToken in the Authentication");
 
 			originToken = (ShopifyOriginToken)auth;
 			
 			if(originToken.isFromShopify()) {
-				System.out.println("... and it IS from Shopify");
 
 				oauth2Token = this.getToken(req);
 				if(oauth2Token != null) {
@@ -74,20 +70,16 @@ public class ShopifyExistingTokenFilter extends GenericFilterBean {
 			}
 		}
 		
-		System.out.println("Going to next filter");
 		chain.doFilter(request, response);
 		
 	}
 	
 	private void setToken(OAuth2PersistedAuthenticationToken oauth2Token) {
-		System.out.println("Setting OAuth2PersistedAuthenticationToken as Authentication");
 
 		SecurityContextHolder.getContext().setAuthentication(oauth2Token);
 	}
 	
 	private OAuth2PersistedAuthenticationToken getToken(HttpServletRequest request) {
-		System.out.println("Looking for token");
-
 		
 		return tokenService.findTokenForRequest(request);
 	}

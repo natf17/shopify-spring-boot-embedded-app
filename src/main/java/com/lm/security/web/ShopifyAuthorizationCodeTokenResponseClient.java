@@ -4,24 +4,15 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
 
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
-import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequestEntityConverter;
 import org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationExchange;
-import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
-import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationResponse;
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -32,6 +23,9 @@ import com.lm.security.converter.CustomShopifyOAuth2AccessTokenResponseHttpMessa
  * This implementation of OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>
  * modifies the OAuth2AuthorizationCodeGrantRequest's clientRegistration
  * by using the shop name to generate a valid tokenUri.
+ * 
+ * It also makes sure the shop name is available later (by the OAuth2UserService) by saving the shop name
+ * as an additional parameter in the OAuth2AccessTokenResponse
  * 
  * 
  */
@@ -68,14 +62,14 @@ public class ShopifyAuthorizationCodeTokenResponseClient implements OAuth2Access
 		
 		Map<String,Object> additionalParams = currentExchange.getAuthorizationRequest().getAdditionalParameters();
 		
-		String shopName = (additionalParams.containsKey(ShopifyOauth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN)) ? (String)additionalParams.get(ShopifyOauth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN) : null;
+		String shopName = (additionalParams.containsKey(ShopifyOAuth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN)) ? (String)additionalParams.get(ShopifyOAuth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN) : null;
 		
 		if(shopName == null) {
 			throw new RuntimeException("Shop name not found in the OAuth2AuthorizationRequest");
 		}
 		
 		Map<String, String> uriVariables = new HashMap<>();
-		uriVariables.put(ShopifyOauth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN, shopName);
+		uriVariables.put(ShopifyOAuth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN, shopName);
 		String tokenUri = UriComponentsBuilder
 				.fromHttpUrl(tokenUriTemplate)
 				.buildAndExpand(uriVariables)
@@ -95,9 +89,12 @@ public class ShopifyAuthorizationCodeTokenResponseClient implements OAuth2Access
 		
 		OAuth2AuthorizationCodeGrantRequest newGrantReq = new OAuth2AuthorizationCodeGrantRequest(newClientRegistration, currentExchange);
 		
-
+		OAuth2AccessTokenResponse resp = oAuth2AccessTokenResponseClient.getTokenResponse(newGrantReq);
+				
 		
-		return oAuth2AccessTokenResponseClient.getTokenResponse(newGrantReq);
+		resp.getAdditionalParameters().replace(ShopifyOAuth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN, shopName);
+		
+		return resp;
 	}
 	
 	// for testing purposes

@@ -1,16 +1,11 @@
 package com.lm.security.oauth2.integration;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import java.util.Arrays;
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.lm.security.web.ShopifyRedirectStrategy;

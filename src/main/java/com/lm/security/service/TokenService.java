@@ -1,11 +1,17 @@
 package com.lm.security.service;
 
+import java.util.Set;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.encrypt.BytesEncryptor;
 import org.springframework.security.crypto.encrypt.Encryptors;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
+import org.springframework.security.crypto.keygen.KeyGenerators;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.stereotype.Service;
 
@@ -35,7 +41,6 @@ public class TokenService {
 	
 	
 	public OAuth2PersistedAuthenticationToken findTokenForRequest(HttpServletRequest request) {
-		System.out.println("TokenService looking for token");
 
 		String shopName = request.getParameter(SHOP_ATTRIBUTE_NAME);
 		EncryptedTokenAndSalt rawTokenAndSalt = null;
@@ -44,14 +49,30 @@ public class TokenService {
 			rawTokenAndSalt = this.tokenRepository.findTokenForRequest(shopName);
 			
 			if (rawTokenAndSalt != null) {
-				System.out.println("Token found");
 				return this.oAuth2LoginAuthenticationTokenFromAccessToken(request, rawTokenAndSalt);
 			}
 			
 		}
-		System.out.println("Shop not provided/found");
 		
 		return null;
+	}
+	
+	public void saveNewStore(OAuth2AuthorizedClient authorizedClient, Authentication principal) {
+		String shop = ((OAuth2AuthenticationToken)principal).getPrincipal().getName();
+		
+		Set<String> scopes = authorizedClient.getAccessToken().getScopes();
+		
+		String rawAccessTokenValue = authorizedClient.getAccessToken().getTokenValue();
+		
+		String genSalt = KeyGenerators.string().generateKey();
+		
+		TextEncryptor encryptor = Encryptors.queryableText(cipherPassword.getPassword(), genSalt);
+		
+		EncryptedTokenAndSalt encryptedTokenAndSalt = new EncryptedTokenAndSalt(encryptor.decrypt(rawAccessTokenValue), genSalt);
+		
+		
+		this.tokenRepository.saveNewStore(shop, scopes, encryptedTokenAndSalt);
+		
 	}
 	
 	
@@ -60,7 +81,6 @@ public class TokenService {
 	 * 
 	 */
 	private OAuth2PersistedAuthenticationToken oAuth2LoginAuthenticationTokenFromAccessToken(HttpServletRequest request, EncryptedTokenAndSalt rawTokenAndSalt) {
-		System.out.println("Extracting raw encrypted token");
 
 		String encryptedToken = rawTokenAndSalt.getEncryptedToken();
 		String salt = rawTokenAndSalt.getSalt();
@@ -69,13 +89,8 @@ public class TokenService {
 		TextEncryptor textEncryptor = Encryptors.queryableText(cipherPassword.getPassword(), salt);
 
 		
-		System.out.println("Decrypting token");
 
 		String decryptedToken = textEncryptor.decrypt(encryptedToken);
-		System.out.println("decrypted: " + decryptedToken);
-		
-		System.out.println("Returning an OAuth2PersistedAuthenticationToken");
-
 		
 		OAuth2AccessToken newAccessToken = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, decryptedToken, null, null);
 

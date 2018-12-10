@@ -20,16 +20,12 @@ public class ShopifyRedirectStrategy extends DefaultRedirectStrategy {
 	public final String I_FRAME_REDIRECT_URI = "/oauth/authorize";
 
 	public void saveRedirectAuthenticationUris(HttpServletRequest request, OAuth2AuthorizationRequest authorizationRequest) {
-		System.out.println("ShopifyRedirectStrategy calculating the redirect uris");
-
+		
+		// "template" already properly filled in with shop name
 		String authorizationUri = authorizationRequest.getAuthorizationUri();
 
 		String parentFrameRedirectUrl = super.calculateRedirectUrl(request.getContextPath(), authorizationUri);
-		System.out.println("parentFrameRedirectUrl: " + parentFrameRedirectUrl);
-
 		
-		System.out.println("Setting AuthenticationRedirectUriHolder as Authentication");
-		// The AuthenticationRedirectUriHolder's isAuthenticated() will return true to allow request to pass through filters 
 		SecurityContextHolder.getContext().setAuthentication(new AuthenticationRedirectUriHolder(
 																addRedirectParams(parentFrameRedirectUrl, authorizationRequest), 
 																addRedirectParams(I_FRAME_REDIRECT_URI, authorizationRequest)

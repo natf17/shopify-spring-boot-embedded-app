@@ -18,7 +18,6 @@ public class ShopifyHttpSessionOAuth2AuthorizationRequestRepository {
 	
 	@SuppressWarnings("unchecked")
 	public void saveAuthorizationRequest(OAuth2AuthorizationRequest authorizationRequest, HttpServletRequest request) {
-		System.out.println("ShopifyHttpSessionOAuth2AuthorizationRequestRepository saving the OAuth2AuthorizationRequest...");
 		String state = authorizationRequest.getState();
 		
 		HttpSession session = request.getSession(false);
@@ -31,7 +30,6 @@ public class ShopifyHttpSessionOAuth2AuthorizationRequestRepository {
 		
 		authorizationRequests.put(state, authorizationRequest);
 		request.getSession().setAttribute(this.sessionAttributeName, authorizationRequests);
-		System.out.println("... completed");
 
 	}
 	

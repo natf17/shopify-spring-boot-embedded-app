@@ -2,11 +2,9 @@ package com.lm.security.oauth2.integration;
 
 import static org.mockito.Mockito.mock;
 
-import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -23,7 +21,6 @@ public class TestConfig {
 	@Bean
 	@Primary
 	public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient() {
-		System.out.println("&&&&&&&&&&CCCC*****");
 		return mock(TestAuthorizationCodeTokenResponseClient.class);
 	}
 	
@@ -50,9 +47,7 @@ public class TestConfig {
     }
 	
 	public static class TestAuthorizationCodeTokenResponseClient implements OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> {
-		public OAuth2AccessTokenResponse getTokenResponse(OAuth2AuthorizationCodeGrantRequest authorizationGrantRequest) {
-			System.out.println("I WAS CALLED");
-			
+		public OAuth2AccessTokenResponse getTokenResponse(OAuth2AuthorizationCodeGrantRequest authorizationGrantRequest) {			
 			return null;
 		}
 	}

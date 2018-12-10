@@ -43,10 +43,6 @@ public class AuthenticationRedirectUriHolder implements Authentication {
 		return this.redirectUris;
 	}
 
-	/*
-	 * ExceptionTranslationFilter will never redirect to the AuthenticationEntryPoint, allowing the request to go through to the controller
-	 * since the JS in the html page takes care of redirecting for authorization, and there's no "login page"
-	 */
 	@Override
 	public boolean isAuthenticated() {
 		return true;

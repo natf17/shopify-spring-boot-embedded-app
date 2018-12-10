@@ -1,15 +1,18 @@
 package com.lm.security.oauth2.integration;
 
-
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
+
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 
 import javax.servlet.http.HttpSession;
 
@@ -22,6 +25,10 @@ import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpOutputMessage;
+import org.springframework.http.client.ClientHttpRequest;
+import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.encrypt.Encryptors;
@@ -29,26 +36,25 @@ import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.security.crypto.keygen.KeyGenerators;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
-import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationExchange;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
-import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationResponse;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
 import com.lm.ShopifyEmbeddedAppSpringBootApplication;
 import com.lm.security.authentication.CipherPassword;
-
+import com.lm.security.web.ShopifyAuthorizationCodeTokenResponseClient;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes= {ShopifyEmbeddedAppSpringBootApplication.class, TestConfig.class})
 @AutoConfigureMockMvc
-public class Step2_AuthorizationGrant {
-
+public class Step3_AccessToken_ShopifyAuthorizationCodeTokenResponseClient_Test {
+	
 	@Autowired
 	private MockMvc mockMvc;
 	
@@ -63,59 +69,48 @@ public class Step2_AuthorizationGrant {
 	
 	private String SESSION_ATTRIBUTE_NAME = HttpSessionOAuth2AuthorizationRequestRepository.class.getName() +  ".AUTHORIZATION_REQUEST";
 	
-	private Map<String, OAuth2AuthorizationRequest> oAuth2AuthorizationRequests;
+	private OAuth2AuthorizationCodeGrantRequest caughtAuthorizationCodeGrantRequest;
 	
 	private String CODE = "sample_code_returned_by_Shopify";
+	
 	private String HMAC = "da9d83c171400a41f8db91a950508985";
+	
 	private String TIMESTAMP = "1409617544";
+	
 	private String SHOP = "newstoretest.myshopify.com";
 
+	private String SHOPIFY_TOKEN_URI = "https://" + SHOP + "/admin/oauth/access_token";
+	
 	
 	/*
 	 * Perform the initial Authorization request and grab objects stored in the HttpSession
 	 * that will be used to "continue" the session in the test
+	 * 
+	 * Capture the OAuth2AuthorizationCodeGrantRequest passed into OAuth2AccessTokenResponseClient.getTokenResponse(...)
+	 * so that our custom client can be tested
+	 * 
 	 */
 	@SuppressWarnings("unchecked")
 	@Before
 	public void initializeValue() throws Exception {
+
 		String sampleSalt = KeyGenerators.string().generateKey();
 		TextEncryptor encryptor = Encryptors.queryableText(cipherPassword.getPassword(), sampleSalt);
 
 		jdbc.update("UPDATE STOREACCESSTOKENS SET access_token=?, salt=? WHERE shop='lmdev.myshopify.com'", encryptor.encrypt("sample"), sampleSalt);
 		
-		MvcResult mR = this.mockMvc.perform(get("/install/shopify?shop=" + SHOP + "&timestamp=dsd&hmac=sdfasrf4324")).andReturn();
+		
+		// part 1 - shop will install app, save OAuth2AuthorizationRequest in the session
+		MvcResult mR = this.mockMvc.perform(get("/install/shopify?shop=newstoretest.myshopify.com&timestamp=dsd&hmac=sdfasrf4324")).andReturn();
 
 		HttpSession rSession = mR.getRequest().getSession();
 		
-		oAuth2AuthorizationRequests = (Map<String, OAuth2AuthorizationRequest>) rSession.getAttribute(SESSION_ATTRIBUTE_NAME);
-
-	}
-	
-
-	/* 
-	 * Test OAuth2LoginAuthenticationFilter prepares a POST request 
-	 * by capturing the OAuth2AuthorizationCodeGrantRequest sent to 
-	 * OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>
-	 * 
-	 * Check:
-	 * 
-	 * 1. The OAuth2AccessTokenResponseClient mock was called
-	 * 2. The clientId of the ClientRegistration matches the one in TestConfig
-	 * 3. The state generated in @Before(AuthorizationRequest) is in OAuth2AuthorizationRequest
-	 * 4. The code passed by "Shopify" in the url is in OAuth2AuthorizationRequest
-	 * 5. The redirectUri in the OAuth2AuthorizationRequest 
-	 * 
-	 * If test is successful: the OAuth2AuthorizationCodeGrantRequest
-	 * that the accessTokenResponseClient has all necessary, correct information
-	 * to request the token from Shopify
-	 * 
-	 */
-	@Test
-	public void whenShopifyJSRedirectsThenObtainAuthenticationCode() throws Exception {
+		Map<String, OAuth2AuthorizationRequest> oAuth2AuthorizationRequests = (Map<String, OAuth2AuthorizationRequest>)rSession.getAttribute(SESSION_ATTRIBUTE_NAME);
 		
 		
-		// For the nonce Shopify requires, use the one generated previously by Spring
+		// part 2 - Shopify redirects to the client, client prepares POST request
 		Iterator<Entry<String, OAuth2AuthorizationRequest>> it = oAuth2AuthorizationRequests.entrySet().iterator();
+		
 		String state = it.next().getKey();
 		
 		MockHttpSession session = new MockHttpSession();
@@ -131,32 +126,82 @@ public class Step2_AuthorizationGrant {
 
 		ArgumentCaptor<OAuth2AuthorizationCodeGrantRequest> grantRequest = ArgumentCaptor.forClass(OAuth2AuthorizationCodeGrantRequest.class);
 		
-		// ... But
-		// assert...
+
 		verify(accessTokenResponseClient).getTokenResponse(grantRequest.capture());
 		
-		OAuth2AuthorizationCodeGrantRequest capturedArg = grantRequest.getValue();
-		ClientRegistration registration = capturedArg.getClientRegistration();
-		OAuth2AuthorizationExchange authExch = capturedArg.getAuthorizationExchange();
-		OAuth2AuthorizationRequest authReq = authExch.getAuthorizationRequest(); // from HttpSession
-		OAuth2AuthorizationResponse authResp = authExch.getAuthorizationResponse();
 		
-		Pattern p = Pattern.compile(".*/login/app/oauth2/code/shopify");
-		
-		Assert.assertEquals("testId", registration.getClientId());
-		Assert.assertEquals(state, authReq.getState());
-		Assert.assertEquals(state, authResp.getState());
-		Assert.assertEquals(CODE, authResp.getCode());
-		
-		Matcher matcher = p.matcher(authResp.getRedirectUri());
-		Assert.assertTrue(matcher.matches());
-		
-		// The DefaultAuthorizationCodeTokenResponseClient takes care of preparing the POST
+		// capture the OAuth2AuthorizationCodeGrantRequest
+		caughtAuthorizationCodeGrantRequest = grantRequest.getValue();	
 		
 	}
 	
 	
 	
+	/*
+	 * Test the ShopifyAuthorizationCodeTokenResponseClient.
+	 * 
+	 * The Step2 test verified that a valid OAuth2AuthorizationCodeGrantRequest
+	 * was passed into the tokenReponseClient. Now, make sure the tokenReponseClient 
+	 * prepares a valid POST request using the default FormHttpMessageConverter.
+	 * 
+	 * Make sure:
+	 * 
+	 * 1. uri: the processed token uri
+	 * 2. POST method
+	 * 3. The body contains the following parameters: 
+	 * 
+	 * 		client_id: The API key for the app, as defined in the Partner Dashboard.
+	 * 		client_secret: The API secret key for the app, as defined in the Partner Dashboard.
+	 * 		code: The same code sent back by SHOPIFY
+	 */
+	
+	@SuppressWarnings("unchecked")
+	@Test
+	public void given_OAuth2AuthorizationCodeGrantRequest_Then_FormHttpMessageConverter_Creates_Valid_TokenRequest() throws Exception {
+
+		ShopifyAuthorizationCodeTokenResponseClient oAuth2AccessTokenResponseClient = new ShopifyAuthorizationCodeTokenResponseClient();
+
+		
+		FormHttpMessageConverter mockConverter = mock(FormHttpMessageConverter.class);
+		
+		when(mockConverter.canWrite(any(Class.class), any())).thenReturn(true);
+		
+		doThrow(new RuntimeException("TEST _ EXPECTED EXCEPTION")).when(mockConverter).write(any(), any(), any());
+		
+		RestTemplate restTemplate = new RestTemplate(Arrays.asList(mockConverter));
+		
+		oAuth2AccessTokenResponseClient.setRestOperations(restTemplate);
+
+		// should throw an exception
+		try {
+			
+			oAuth2AccessTokenResponseClient.getTokenResponse(this.caughtAuthorizationCodeGrantRequest);
+			
+		} catch(RuntimeException e) {
+			// expected
+		}
+		
+		ArgumentCaptor<MultiValueMap<String,?>> requestParamsMapCapt = ArgumentCaptor.forClass(MultiValueMap.class);
+		
+		ArgumentCaptor<HttpOutputMessage> outputMessageCapt = ArgumentCaptor.forClass(HttpOutputMessage.class);
+		
+		
+		verify(mockConverter).write(requestParamsMapCapt.capture(), any(), outputMessageCapt.capture());
+		
+		
+		MultiValueMap<String,?> requestParamsMap = requestParamsMapCapt.getValue();
+		
+		Assert.assertTrue(requestParamsMap.containsKey("client_id"));
+		Assert.assertTrue(requestParamsMap.containsKey("client_secret"));
+		Assert.assertTrue(requestParamsMap.containsKey("code"));
+		
+		
+		ClientHttpRequest requestCapt = (ClientHttpRequest)outputMessageCapt.getValue();
+		
+		Assert.assertEquals(SHOPIFY_TOKEN_URI, requestCapt.getURI().toURL().toString());
+		Assert.assertEquals(HttpMethod.POST, requestCapt.getMethod());
+
+	}
 	
 
 }
