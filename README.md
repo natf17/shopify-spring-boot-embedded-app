@@ -31,15 +31,15 @@
 
 
 The `OAuth2LoginAuthenticationFilter`/`AbstractAuthenticationProcessingFilter` matches the default "{baseUrl}/login/app/oauth2/code/shopify" and...
-	1. Retrieves and removes the `OAuth2AuthorizationRequest` saved by `ShopifyHttpSessionOAuth2AuthorizationRequestRepository`
-	2. Builds an `OAuth2AuthorizationResponse` from the Shopify response parameters
-	3. Builds an `OAuth2AuthorizationExchange` that contains the `OAuth2AuthorizationRequest` and `OAuth2AuthorizationResponse` 
-	4. Uses the `OAuth2AuthorizationExchange` along with the corresponding Shopify `ClientRegistration` to build an `OAuth2LoginAuthenticationToken`
-	5. Delegates to `OAuth2LoginAuthenticationProvider`, which returns a `OAuth2LoginAuthenticationToken`
-	6. Uses the `OAuth2LoginAuthenticationToken` to create an `OAuth2AuthenticationToken` and an `OAuth2AuthorizedClient`
-	7. Uses the default `AuthenticatedPrincipalOAuth2AuthorizedClientRepository` (which uses the custom `ShopifyOAuth2AuthorizedClientService`) to save the `OAuth2AuthorizedClient`
-	8. Calls `sessionStrategy.onAuthentication(...)` on the default `NullAuthenticatedSessionStrategy` (does nothing)
-	9. Calls `successfulAuthentication(...)` which sets the authentication in the `SecurityContextHolder`, takes care of other services, and finally delegates to the custom `NoRedirectSuccessHandler` successHandler
+1. Retrieves and removes the `OAuth2AuthorizationRequest` saved by `ShopifyHttpSessionOAuth2AuthorizationRequestRepository`
+2. Builds an `OAuth2AuthorizationResponse` from the Shopify response parameters
+3. Builds an `OAuth2AuthorizationExchange` that contains the `OAuth2AuthorizationRequest` and `OAuth2AuthorizationResponse` 
+4. Uses the `OAuth2AuthorizationExchange` along with the corresponding Shopify `ClientRegistration` to build an `OAuth2LoginAuthenticationToken`
+5. Delegates to `OAuth2LoginAuthenticationProvider`, which returns a `OAuth2LoginAuthenticationToken`
+6. Uses the `OAuth2LoginAuthenticationToken` to create an `OAuth2AuthenticationToken` and an `OAuth2AuthorizedClient`
+7. Uses the default `AuthenticatedPrincipalOAuth2AuthorizedClientRepository` (which uses the custom `ShopifyOAuth2AuthorizedClientService`) to save the `OAuth2AuthorizedClient`
+8. Calls `sessionStrategy.onAuthentication(...)` on the default `NullAuthenticatedSessionStrategy` (does nothing)
+9. Calls `successfulAuthentication(...)` which sets the authentication in the `SecurityContextHolder`, takes care of other services, and finally delegates to the custom `NoRedirectSuccessHandler` successHandler
 
 
 
