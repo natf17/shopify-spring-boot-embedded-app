@@ -27,7 +27,8 @@ import com.lm.security.authentication.ShopifyOriginToken;
  * This filter checks the request to see if it came from Shopify.
  * It only checks the paths passed in via the constructor (matchedPaths and the restrictedPath)
  * 
- * If it did, and it doesn't "Shopify" authenticated, it populates the SecurityContext with a ShopifyOriginToken.
+ * If there's a match on the path, and it isn't already "Shopify" authenticated, it populates 
+ * the SecurityContext with a ShopifyOriginToken.
  * 
  * If not, the ShopifyOriginToken is not set.
  * 

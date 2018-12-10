@@ -29,7 +29,7 @@ public class HomeController {
 		return "home";
 	}
 	
-	@RequestMapping(path ="/dsfs", method = RequestMethod.GET)
+	@RequestMapping(path =SecurityConfig.ANY_AUTHORIZATION_REDIRECT_PATH, method = RequestMethod.GET)
 	public String installationSuccess() {
 		
 				

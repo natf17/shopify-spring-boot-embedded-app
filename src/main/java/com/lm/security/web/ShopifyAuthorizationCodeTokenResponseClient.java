@@ -91,8 +91,12 @@ public class ShopifyAuthorizationCodeTokenResponseClient implements OAuth2Access
 		
 		OAuth2AccessTokenResponse resp = oAuth2AccessTokenResponseClient.getTokenResponse(newGrantReq);
 				
-		
-		resp.getAdditionalParameters().replace(ShopifyOAuth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN, shopName);
+		if(resp.getAdditionalParameters().containsKey(ShopifyOAuth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN)) {
+			resp.getAdditionalParameters().replace(ShopifyOAuth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN, shopName);
+
+		} else {
+			resp.getAdditionalParameters().put(ShopifyOAuth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN, shopName);
+		}
 		
 		return resp;
 	}

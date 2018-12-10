@@ -44,9 +44,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	public static final String ANY_INSTALL_PATH = INSTALL_PATH + "/**";
 	public static final String AUTHORIZATION_REDIRECT_PATH = "/login/app/oauth2/code";
 	public static final String ANY_AUTHORIZATION_REDIRECT_PATH = AUTHORIZATION_REDIRECT_PATH + "/**";
-	
-	private Environment env;
-	
+		
 
 	@Autowired
 	ApplicationContext ctx;
