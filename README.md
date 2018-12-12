@@ -1,10 +1,14 @@
 # The How
 
+Note: This Spring Security application requires the Java Cryptography Encryption policy files for encryption.
+
+See https://www.oracle.com/technetwork/java/javase/downloads/jce-all-download-5170447.html
+
 ***************************************
 
 ### `ShopifyOriginFilter`
-- If the request is to the application installation path, this filter sets a `ShopifyOriginToken` as the `Authentication` object if it is determined that the request came from Shopify.
-- If the request is to what Shopify calls the "whitelisted redirection url", and if the request did not come from Shopify, an exception will be thrown.
+- If the request is to the application installation path, this filter sets a `ShopifyOriginToken` as the `Authentication` object if it is determined that the request came from Shopify (and if there is no "Shopify" Authentication object already).
+- If the request is to what Shopify calls the "whitelisted redirection url", and if the request did not come from Shopify, a 403 response is sent via the AccessDeniedHandler.
 
 ### `ShopifyExistingTokenFilter`
 - This filter matches the installation endpoint path (/install)
@@ -44,9 +48,9 @@ The `OAuth2LoginAuthenticationFilter`/`AbstractAuthenticationProcessingFilter` m
 
 
 The default `OAuth2LoginAuthenticationProvider`...
-	1. Uses a custom `OAuth2AccessTokenResponseClient`: `ShopifyAuthorizationCodeTokenResponseClient` to get a `OAuth2AccessTokenResponse`
-	2. Asks the custom implementation of `OAuth2UserService<OAuth2UserRequest, OAuth2User>` userService), `DefaultShopifyUserService`, to load the `OAuth2User`.
-	3. Returns a `OAuth2LoginAuthenticationToken` using the `ClientRegistration`, `AuthorizationExchange`, `OAuth2User`, ...
+1. Uses a custom `OAuth2AccessTokenResponseClient`: `ShopifyAuthorizationCodeTokenResponseClient` to get a `OAuth2AccessTokenResponse`
+2. Asks the custom implementation of `OAuth2UserService<OAuth2UserRequest, OAuth2User>` userService), `DefaultShopifyUserService`, to load the `OAuth2User`.
+3. Returns a `OAuth2LoginAuthenticationToken` using the `ClientRegistration`, `AuthorizationExchange`, `OAuth2User`, ...
 
 
 
@@ -105,14 +109,5 @@ The default `OAuth2LoginAuthenticationProvider`...
 ***********************************
 
 TODO
-
-1. an authentication entry point provided to exceptionHandling() (which then gives it to oauth2login())
-should simply print an error (redirects not supported in iframe)
-
-
-
-
-
-
-
-Every other request
+1. Write test for ShopifyVerificationStrategy
+2. Finish the ShopifyVerificationStrategy

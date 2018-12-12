@@ -20,7 +20,6 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.lm.security.authentication.OAuth2PersistedAuthenticationToken;
-import com.lm.security.authentication.ShopifyOriginToken;
 import com.lm.security.service.TokenService;
 
 /*
@@ -29,7 +28,6 @@ import com.lm.security.service.TokenService;
  * 
  */
 public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2AuthorizationRequestResolver {
-	private static final String SHOPIFY_REGISTRATION_ID = "shopify";
 	public static final String SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN = "shop"; // must match template variable in ClientRegistration token_uri
 	
 	private ClientRegistrationRepository clientRegistrationRepository;
@@ -67,6 +65,8 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 		
 		if(shopName == null || shopName.isEmpty()) {
 			// shop name is required
+			// an AnonymousAuthenticationToken will be set by
+			// its corresponding filter, triggering a redirect
 			return null;
 		}
 		

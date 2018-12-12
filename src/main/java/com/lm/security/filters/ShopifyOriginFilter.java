@@ -1,12 +1,10 @@
 package com.lm.security.filters;
 
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -14,26 +12,32 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import com.lm.security.authentication.OAuth2PersistedAuthenticationToken;
 import com.lm.security.authentication.ShopifyOriginToken;
+import com.lm.security.authentication.ShopifyVerificationStrategy;
 
 /*
  * This filter checks the request to see if it came from Shopify.
  * It only checks the paths passed in via the constructor (matchedPaths and the restrictedPath)
  * 
- * If there's a match on the path, and it isn't already "Shopify" authenticated, it populates 
+ * If the request matches the authorizationPath, it must be from Shopify and contain the valid nonce.
+ * If not, it uses accessDeniedHandler to generate an error
+ * 
+ * For any other matching path, if it came from Shopify, and it isn't already "Shopify" authenticated, it populates 
  * the SecurityContext with a ShopifyOriginToken.
  * 
  * If not, the ShopifyOriginToken is not set.
- * 
- * However, for the url path provided, if the request did not come from Shopify, instead of
- * setting the ShopifyOriginToken, it will throw an error.
+
  * 
  * 
  */
@@ -41,10 +45,13 @@ public class ShopifyOriginFilter implements Filter {
 
 	private AntPathRequestMatcher mustComeFromShopifyMatcher;
 	private List<AntPathRequestMatcher> applicablePaths;
+	private ShopifyVerificationStrategy shopifyVerificationStrategy;
+	private AccessDeniedHandler accessDeniedHandler = new AccessDeniedHandlerImpl();
 
 	
-	public ShopifyOriginFilter(String restrictedPath, String... matchedPaths) {
-		this.mustComeFromShopifyMatcher = new AntPathRequestMatcher(restrictedPath);
+	public ShopifyOriginFilter(ShopifyVerificationStrategy shopifyVerificationStrategy, String authorizationPath, String... matchedPaths) {
+		this.mustComeFromShopifyMatcher = new AntPathRequestMatcher(authorizationPath);
+		this.shopifyVerificationStrategy = shopifyVerificationStrategy;
 		
 		applicablePaths = new ArrayList<>();
 		applicablePaths.add(mustComeFromShopifyMatcher);
@@ -56,6 +63,12 @@ public class ShopifyOriginFilter implements Filter {
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 		
+
+		
+		boolean mustBeFromShopify = false;
+		boolean comesFromShopify = false;
+		boolean isAlreadyAuthenticated = false;
+		
 		if(!applyFilter(request)) {
 			
 			chain.doFilter(request, response);
@@ -63,17 +76,34 @@ public class ShopifyOriginFilter implements Filter {
 			return;
 		}
 		
-		if(isShopifyRequest(request)) {
-
-			if(!isAlreadyAuthenticated()) {
-				SecurityContextHolder.getContext().setAuthentication(new ShopifyOriginToken(true));
-			}
-		} else {
-			if(mustComeFromShopifyMatcher.matches((HttpServletRequest)request)) {
-				throw new RuntimeException("REQUEST MUST COME SHOPIFY");
+		// this filter will be applied
+		
+		mustBeFromShopify = mustComeFromShopifyMatcher.matches((HttpServletRequest)request);
+		comesFromShopify = isShopifyRequest(request);
+		isAlreadyAuthenticated = isAlreadyAuthenticated();
 				
+		if(mustBeFromShopify) {
+			if(comesFromShopify && hasValidNonce(request)) {
+
+				if(!isAlreadyAuthenticated) {
+					SecurityContextHolder.getContext().setAuthentication(new ShopifyOriginToken(true));
+				}
+			} else {
+				// do not set any Authentication
+				// the path must be .authenticated() 
+				accessDeniedHandler.handle((HttpServletRequest)request, (HttpServletResponse)response, new AccessDeniedException("This request must come from Shopify"));
+				return;
 			}
+			
+		} else {
+			if(comesFromShopify) {
+				if(!isAlreadyAuthenticated) {
+					SecurityContextHolder.getContext().setAuthentication(new ShopifyOriginToken(true));
+				}
+			}
+			
 		}
+
 		
 		chain.doFilter(request, response);
 
@@ -86,12 +116,16 @@ public class ShopifyOriginFilter implements Filter {
 	 * 4. Is (3) = hmac value?
 	 */
 	private boolean isShopifyRequest(ServletRequest request) {
-		Map<String,String[]> requestParamters = request.getParameterMap();
+		
+		return shopifyVerificationStrategy.isShopifyRequest((HttpServletRequest)request);
 		
 		
 		
-		
-		return true;
+	}
+	
+	private boolean hasValidNonce(ServletRequest request) {
+		return shopifyVerificationStrategy.hasValidNonce((HttpServletRequest)request);
+
 	}
 	
 	private boolean isAlreadyAuthenticated() {
@@ -105,6 +139,8 @@ public class ShopifyOriginFilter implements Filter {
 
 	}
 	
+	// should apply the filter if the request matches
+	// any path passed in to this filter
 	private boolean applyFilter(ServletRequest request) {
 		HttpServletRequest req = (HttpServletRequest)request;
 		

@@ -4,10 +4,7 @@ package com.lm.security.configuration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.env.Environment;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -27,6 +24,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.logout.LogoutFilter;
 
 import com.lm.security.authentication.CipherPassword;
+import com.lm.security.authentication.ShopifyVerificationStrategy;
 import com.lm.security.filters.ShopifyExistingTokenFilter;
 import com.lm.security.filters.ShopifyOriginFilter;
 import com.lm.security.service.DefaultShopifyUserService;
@@ -44,6 +42,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	public static final String ANY_INSTALL_PATH = INSTALL_PATH + "/**";
 	public static final String AUTHORIZATION_REDIRECT_PATH = "/login/app/oauth2/code";
 	public static final String ANY_AUTHORIZATION_REDIRECT_PATH = AUTHORIZATION_REDIRECT_PATH + "/**";
+	public static final String LOGIN_ENDPOINT = "/init";
+	public static final String LOGOUT_ENDPOINT = "/logout";
+	public static final String AUTHENTICATION_FALURE_URL = "/auth/error";
 		
 
 	@Autowired
@@ -53,6 +54,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	@Autowired
 	private TokenService tokenService;
 	
+	
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		System.out.println(this.tokenService.toString());
@@ -61,13 +63,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		Object bean = ctx.getBean("shopifyOauth2AuthorizationRequestResolver");
 		
 
-		http.addFilterAfter(new ShopifyOriginFilter(ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH), LogoutFilter.class);
+		http.addFilterAfter(new ShopifyOriginFilter(shopifyVerficationStrategy(), ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH), LogoutFilter.class);
 		http.addFilterAfter(new ShopifyExistingTokenFilter(this.tokenService, ANY_INSTALL_PATH), ShopifyOriginFilter.class);
 		
 		http
 	          .authorizeRequests()
-	          	.mvcMatchers(ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH).permitAll()
+	          	.mvcMatchers(LOGIN_ENDPOINT).permitAll()
 	          	.anyRequest().authenticated()
+	          .and()
+	          .logout()
+	          	.logoutUrl(LOGOUT_ENDPOINT)
+	          	.logoutSuccessUrl(LOGIN_ENDPOINT)
 	          .and()
 	          .oauth2Login()
 	          	.authorizationEndpoint()
@@ -80,7 +86,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	          	.userInfoEndpoint().userService(userService())
 	          .and()
 	          	.successHandler(successHandler())
-	          	.loginPage(INSTALL_PATH); // NOT for embedded app, since it involves a redirect, it wouldn't be in the embedded app scenario
+	          	.loginPage(LOGIN_ENDPOINT) // for use outside of an embedded app since it involves a redirect
+	          	.failureUrl(AUTHENTICATION_FALURE_URL); // see AbstractAuthenticationProcessingFilter
+	
 	          
 	}
 	
@@ -144,6 +152,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .clientName("Shopify")
             .build();
     }
+	
+	@Bean
+	public ShopifyVerificationStrategy shopifyVerficationStrategy() {
+		return new ShopifyVerificationStrategy();
+	}
 
 
 	

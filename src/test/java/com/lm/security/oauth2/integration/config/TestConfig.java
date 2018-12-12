@@ -1,4 +1,4 @@
-package com.lm.security.oauth2.integration;
+package com.lm.security.oauth2.integration.config;
 
 import static org.mockito.Mockito.mock;
 

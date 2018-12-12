@@ -48,10 +48,12 @@ import org.springframework.web.client.RestTemplate;
 
 import com.lm.ShopifyEmbeddedAppSpringBootApplication;
 import com.lm.security.authentication.CipherPassword;
+import com.lm.security.oauth2.integration.config.DisabledShopifyVerfificationConfig;
+import com.lm.security.oauth2.integration.config.TestConfig;
 import com.lm.security.web.ShopifyAuthorizationCodeTokenResponseClient;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes= {ShopifyEmbeddedAppSpringBootApplication.class, TestConfig.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes= {ShopifyEmbeddedAppSpringBootApplication.class, TestConfig.class, DisabledShopifyVerfificationConfig.class})
 @AutoConfigureMockMvc
 public class Step3_AccessToken_ShopifyAuthorizationCodeTokenResponseClient_Test {
 	

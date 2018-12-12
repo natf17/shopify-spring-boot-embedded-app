@@ -1,10 +1,7 @@
 package com.lm.security.web;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -47,7 +44,7 @@ public class ShopifyRedirectStrategy extends DefaultRedirectStrategy {
 		queryParams.add("client_id", authorizationRequest.getClientId());
 		queryParams.add("redirect_uri", authorizationRequest.getRedirectUri());
 		queryParams.add("scope", concatenateListIntoCommaString(new ArrayList<>(authorizationRequest.getScopes())));
-		queryParams.add("state", "nonce");
+		queryParams.add("state", authorizationRequest.getState());
 		
 		String re = UriComponentsBuilder
 								.fromUriString(uri)
