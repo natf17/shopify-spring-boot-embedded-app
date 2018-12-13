@@ -10,7 +10,7 @@ import org.springframework.security.oauth2.client.web.HttpSessionOAuth2Authoriza
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 
 public class ShopifyHttpSessionOAuth2AuthorizationRequestRepository {
-	private static final String DEFAULT_AUTHORIZATION_REQUEST_ATTR_NAME =
+	public static final String DEFAULT_AUTHORIZATION_REQUEST_ATTR_NAME =
 			HttpSessionOAuth2AuthorizationRequestRepository.class.getName() +  ".AUTHORIZATION_REQUEST";
 
 	private final String sessionAttributeName = DEFAULT_AUTHORIZATION_REQUEST_ATTR_NAME;

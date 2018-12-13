@@ -50,20 +50,31 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	@Autowired
 	ApplicationContext ctx;
 	
-	
 	@Autowired
 	private TokenService tokenService;
+	
+	@Autowired
+	private ShopifyVerificationStrategy shopifyVerficationStrategy;
+	
+	@Autowired
+	private OAuth2AuthorizationRequestResolver shopifyOauth2AuthorizationRequestResolver;
+	
+	@Autowired
+	OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient;
+	
+	@Autowired
+	OAuth2UserService<OAuth2UserRequest, OAuth2User> userService;
+	
+	@Autowired
+	AuthenticationSuccessHandler successHandler;
+	
 	
 	
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
-		System.out.println(this.tokenService.toString());
+				
 
-		
-		Object bean = ctx.getBean("shopifyOauth2AuthorizationRequestResolver");
-		
-
-		http.addFilterAfter(new ShopifyOriginFilter(shopifyVerficationStrategy(), ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH), LogoutFilter.class);
+		http.addFilterAfter(new ShopifyOriginFilter(shopifyVerficationStrategy, ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH), LogoutFilter.class);
 		http.addFilterAfter(new ShopifyExistingTokenFilter(this.tokenService, ANY_INSTALL_PATH), ShopifyOriginFilter.class);
 		
 		http
@@ -77,15 +88,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	          .and()
 	          .oauth2Login()
 	          	.authorizationEndpoint()
-	          		.authorizationRequestResolver((OAuth2AuthorizationRequestResolver)bean)
+	          		.authorizationRequestResolver(shopifyOauth2AuthorizationRequestResolver)
 	          .and()
 	          	.redirectionEndpoint().baseUri(ANY_AUTHORIZATION_REDIRECT_PATH) // same as filterProcessesUrl
 	          .and()
-	          	.tokenEndpoint().accessTokenResponseClient(accessTokenResponseClient()) // allows for seamless unit testing
+	          	.tokenEndpoint().accessTokenResponseClient(accessTokenResponseClient) // allows for seamless unit testing
 	          .and()
-	          	.userInfoEndpoint().userService(userService())
+	          	.userInfoEndpoint().userService(userService)
 	          .and()
-	          	.successHandler(successHandler())
+	          	.successHandler(successHandler)
 	          	.loginPage(LOGIN_ENDPOINT) // for use outside of an embedded app since it involves a redirect
 	          	.failureUrl(AUTHENTICATION_FALURE_URL); // see AbstractAuthenticationProcessingFilter
 	
@@ -93,70 +104,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	}
 	
 
-	@Bean
-	CipherPassword cipherPassword(@Value("${lm.security.cipher.password}") String password) {
-		return new CipherPassword(password);
-	}
 	
-	
-	@Bean
-	OAuth2UserService<OAuth2UserRequest, OAuth2User> userService() {
-		return new DefaultShopifyUserService();
-	}
-	
-	
-	@Bean
-	public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient() {
-		return new ShopifyAuthorizationCodeTokenResponseClient();
-	}
-	
-	
-	@Bean
-	public AuthenticationSuccessHandler successHandler() {
-		return new NoRedirectSuccessHandler();
-	}
-	
-	
-	@Bean
-    public ClientRegistrationRepository clientRegistrationRepository(ClientRegistration shopifyClientRegistration) {
-        return new InMemoryClientRegistrationRepository(shopifyClientRegistration);
-    }
-	
-	// used by AuthenticatedPrincipalOAuth2AuthorizedClientRepository
-	@Bean
-	public OAuth2AuthorizedClientService clientService() {
-		return new ShopifyOAuth2AuthorizedClientService(this.tokenService);
-	}
-	
-	@Bean(name="shopifyOauth2AuthorizationRequestResolver")
-	public OAuth2AuthorizationRequestResolver shopifyOauth2AuthorizationRequestResolver(ClientRegistrationRepository clientRegistrationRepository) {
-		return new ShopifyOAuth2AuthorizationRequestResolver(clientRegistrationRepository, INSTALL_PATH);
-	}
-	
-
-	@Bean
-	protected ClientRegistration shopifyClientRegistration(@Value("${shopify.client.client_id}")String clientId,
-			 @Value("${shopify.client.client_secret}")String clientSecret, 
-			 @Value("${shopify.client.scope}")String scope) {
-		
-
-        return ClientRegistration.withRegistrationId("shopify")
-            .clientId(clientId)
-            .clientSecret(clientSecret)
-            .clientAuthenticationMethod(ClientAuthenticationMethod.POST)
-            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .redirectUriTemplate("{baseUrl}" + AUTHORIZATION_REDIRECT_PATH + "{registrationId}")
-            .scope(scope.split(","))
-            .authorizationUri("https://{shop}/admin/oauth/authorize")
-            .tokenUri("https://{shop}/admin/oauth/access_token")
-            .clientName("Shopify")
-            .build();
-    }
-	
-	@Bean
-	public ShopifyVerificationStrategy shopifyVerficationStrategy() {
-		return new ShopifyVerificationStrategy();
-	}
 
 
 	
