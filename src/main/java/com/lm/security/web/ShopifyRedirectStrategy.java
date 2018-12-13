@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.web.DefaultRedirectStrategy;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -15,6 +16,10 @@ import com.lm.security.authentication.AuthenticationRedirectUriHolder;
 
 public class ShopifyRedirectStrategy extends DefaultRedirectStrategy {
 	public final String I_FRAME_REDIRECT_URI = "/oauth/authorize";
+	private final String STATE = OAuth2ParameterNames.STATE;
+	private final String SCOPE = OAuth2ParameterNames.SCOPE;
+	private final String REDIRECT_URI = OAuth2ParameterNames.REDIRECT_URI;
+	private final String CLIENT_ID = OAuth2ParameterNames.CLIENT_ID;
 
 	public void saveRedirectAuthenticationUris(HttpServletRequest request, OAuth2AuthorizationRequest authorizationRequest) {
 		
@@ -41,10 +46,10 @@ public class ShopifyRedirectStrategy extends DefaultRedirectStrategy {
 	 */
 	private String addRedirectParams(String uri, OAuth2AuthorizationRequest authorizationRequest) {
 		LinkedMultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
-		queryParams.add("client_id", authorizationRequest.getClientId());
-		queryParams.add("redirect_uri", authorizationRequest.getRedirectUri());
-		queryParams.add("scope", concatenateListIntoCommaString(new ArrayList<>(authorizationRequest.getScopes())));
-		queryParams.add("state", authorizationRequest.getState());
+		queryParams.add(CLIENT_ID, authorizationRequest.getClientId());
+		queryParams.add(REDIRECT_URI, authorizationRequest.getRedirectUri());
+		queryParams.add(SCOPE, concatenateListIntoCommaString(new ArrayList<>(authorizationRequest.getScopes())));
+		queryParams.add(STATE, authorizationRequest.getState());
 		
 		String re = UriComponentsBuilder
 								.fromUriString(uri)

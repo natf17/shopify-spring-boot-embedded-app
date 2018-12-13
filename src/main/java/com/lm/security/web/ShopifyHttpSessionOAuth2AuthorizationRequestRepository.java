@@ -12,8 +12,6 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequ
 public class ShopifyHttpSessionOAuth2AuthorizationRequestRepository {
 	public static final String DEFAULT_AUTHORIZATION_REQUEST_ATTR_NAME =
 			HttpSessionOAuth2AuthorizationRequestRepository.class.getName() +  ".AUTHORIZATION_REQUEST";
-
-	private final String sessionAttributeName = DEFAULT_AUTHORIZATION_REQUEST_ATTR_NAME;
 	
 	
 	@SuppressWarnings("unchecked")
@@ -22,17 +20,28 @@ public class ShopifyHttpSessionOAuth2AuthorizationRequestRepository {
 		
 		HttpSession session = request.getSession(false);
 		Map<String, OAuth2AuthorizationRequest> authorizationRequests = session == null ? null :
-				(Map<String, OAuth2AuthorizationRequest>) session.getAttribute(this.sessionAttributeName);
+				(Map<String, OAuth2AuthorizationRequest>) session.getAttribute(DEFAULT_AUTHORIZATION_REQUEST_ATTR_NAME);
 		
 		if (authorizationRequests == null) {
 			authorizationRequests =  new HashMap<>();
 		}		
 		
 		authorizationRequests.put(state, authorizationRequest);
-		request.getSession().setAttribute(this.sessionAttributeName, authorizationRequests);
+		request.getSession().setAttribute(DEFAULT_AUTHORIZATION_REQUEST_ATTR_NAME, authorizationRequests);
 
 	}
 	
+	
+	@SuppressWarnings("unchecked")
+	public Map<String, OAuth2AuthorizationRequest> getAuthorizationRequests(HttpServletRequest request) {
+		HttpSession session = request.getSession(false);
+		Map<String, OAuth2AuthorizationRequest> authorizationRequests = session == null ? null :
+				(Map<String, OAuth2AuthorizationRequest>) session.getAttribute(DEFAULT_AUTHORIZATION_REQUEST_ATTR_NAME);
+		if (authorizationRequests == null) {
+			return new HashMap<>();
+		}
+		return authorizationRequests;
+	}
 	
 	
 }

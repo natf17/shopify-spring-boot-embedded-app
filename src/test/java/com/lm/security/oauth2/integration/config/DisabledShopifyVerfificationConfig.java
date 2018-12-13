@@ -14,7 +14,12 @@ public class DisabledShopifyVerfificationConfig {
 		return new NullVerificationStrategy();
 	}
 	
+	
 	class NullVerificationStrategy extends ShopifyVerificationStrategy {
+		
+		public NullVerificationStrategy() {
+			super(null);
+		}
 		
 		@Override
 		public boolean isShopifyRequest(HttpServletRequest request) {

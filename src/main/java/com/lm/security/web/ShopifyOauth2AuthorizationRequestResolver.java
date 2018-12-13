@@ -34,13 +34,15 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 	private AntPathRequestMatcher authorizationRequestMatcher;
 	private final StringKeyGenerator stateGenerator = new Base64StringKeyGenerator(Base64.getUrlEncoder());
 	private final ShopifyRedirectStrategy authorizationRedirectStrategy = new ShopifyRedirectStrategy();
-	private final ShopifyHttpSessionOAuth2AuthorizationRequestRepository customAuthorizationRequestRepository = new ShopifyHttpSessionOAuth2AuthorizationRequestRepository();
+	private final ShopifyHttpSessionOAuth2AuthorizationRequestRepository customAuthorizationRequestRepository;
 
 	
-	public ShopifyOAuth2AuthorizationRequestResolver(ClientRegistrationRepository clientRegistrationRepository,
-			String authorizationRequestBaseUri) {
+	public ShopifyOAuth2AuthorizationRequestResolver(ClientRegistrationRepository clientRegistrationRepository, 
+							ShopifyHttpSessionOAuth2AuthorizationRequestRepository customAuthorizationRequestRepository,
+							String authorizationRequestBaseUri) {
 
 		this.clientRegistrationRepository = clientRegistrationRepository;
+		this.customAuthorizationRequestRepository = customAuthorizationRequestRepository;
 		this.authorizationRequestMatcher = new AntPathRequestMatcher(
 				authorizationRequestBaseUri + "/{registrationId}");
 	}
@@ -169,7 +171,7 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 		String shopName = this.getShopName(request);
 		
 		Map<String, String> uriVariables = new HashMap<>();
-		uriVariables.put("shop", shopName);
+		uriVariables.put(SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN, shopName);
 		
 		String authorizationUri = UriComponentsBuilder
 							.fromHttpUrl(authorizationUriTemplate)

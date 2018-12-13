@@ -25,6 +25,7 @@ import com.lm.security.service.ShopifyOAuth2AuthorizedClientService;
 import com.lm.security.service.TokenService;
 import com.lm.security.web.NoRedirectSuccessHandler;
 import com.lm.security.web.ShopifyAuthorizationCodeTokenResponseClient;
+import com.lm.security.web.ShopifyHttpSessionOAuth2AuthorizationRequestRepository;
 import com.lm.security.web.ShopifyOAuth2AuthorizationRequestResolver;
 
 
@@ -71,7 +72,12 @@ public class SecurityBeansConfig {
 	
 	@Bean
 	public OAuth2AuthorizationRequestResolver shopifyOauth2AuthorizationRequestResolver(ClientRegistrationRepository clientRegistrationRepository) {
-		return new ShopifyOAuth2AuthorizationRequestResolver(clientRegistrationRepository, SecurityConfig.INSTALL_PATH);
+		return new ShopifyOAuth2AuthorizationRequestResolver(clientRegistrationRepository, customAuthorizationRequestRepository(), SecurityConfig.INSTALL_PATH);
+	}
+	
+	@Bean
+	public ShopifyHttpSessionOAuth2AuthorizationRequestRepository customAuthorizationRequestRepository() {
+		return new ShopifyHttpSessionOAuth2AuthorizationRequestRepository();
 	}
 	
 
@@ -96,7 +102,7 @@ public class SecurityBeansConfig {
 	
 	@Bean
 	public ShopifyVerificationStrategy shopifyVerficationStrategy() {
-		return new ShopifyVerificationStrategy();
+		return new ShopifyVerificationStrategy(customAuthorizationRequestRepository());
 	}
 
 }

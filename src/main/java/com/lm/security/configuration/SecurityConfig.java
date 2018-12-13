@@ -2,37 +2,23 @@ package com.lm.security.configuration;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
 
-import com.lm.security.authentication.CipherPassword;
 import com.lm.security.authentication.ShopifyVerificationStrategy;
 import com.lm.security.filters.ShopifyExistingTokenFilter;
 import com.lm.security.filters.ShopifyOriginFilter;
-import com.lm.security.service.DefaultShopifyUserService;
-import com.lm.security.service.ShopifyOAuth2AuthorizedClientService;
 import com.lm.security.service.TokenService;
-import com.lm.security.web.NoRedirectSuccessHandler;
-import com.lm.security.web.ShopifyAuthorizationCodeTokenResponseClient;
-import com.lm.security.web.ShopifyOAuth2AuthorizationRequestResolver;
 
 
 @EnableWebSecurity
@@ -69,7 +55,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	AuthenticationSuccessHandler successHandler;
 	
 	
-	
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 				
@@ -99,15 +84,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	          	.successHandler(successHandler)
 	          	.loginPage(LOGIN_ENDPOINT) // for use outside of an embedded app since it involves a redirect
 	          	.failureUrl(AUTHENTICATION_FALURE_URL); // see AbstractAuthenticationProcessingFilter
-	
-	          
+		          
 	}
-	
-
-	
-
-
-	
 	
 
 }
