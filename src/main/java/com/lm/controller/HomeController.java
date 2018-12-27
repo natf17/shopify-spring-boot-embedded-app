@@ -22,7 +22,6 @@ public class HomeController {
 	
 	@RequestMapping(path = SecurityConfig.ANY_INSTALL_PATH, method = RequestMethod.GET)
 	public String installAndHome() {
-				
 		return "home";
 	}
 	

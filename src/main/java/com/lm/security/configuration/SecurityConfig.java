@@ -59,13 +59,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
-				
-
+						
 		http.addFilterAfter(new ShopifyOriginFilter(shopifyVerficationStrategy, ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH), LogoutFilter.class);
 		http.addFilterAfter(new ShopifyExistingTokenFilter(this.tokenService, ANY_INSTALL_PATH), ShopifyOriginFilter.class);
 		http.addFilterBefore(new BehindHttpsProxyFilter(ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH), OAuth2AuthorizationRequestRedirectFilter.class);
 
-		http
+		http.headers().frameOptions().disable()
+			  .and()
 	          .authorizeRequests()
 	          	.mvcMatchers(LOGIN_ENDPOINT).permitAll()
 	          	.mvcMatchers("/favicon.ico").permitAll()

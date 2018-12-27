@@ -133,27 +133,53 @@ public class ShopifyVerificationStrategy {
 		
 	}
 	
+	/*
+	 * Note: This method is called 
+	 * 
+	 * 1. In an embedded app when HMAC verification must be done on the
+	 * 	  install path 
+	 * 
+	 * 2. For every authorization redirect uri ("white-listed" urls)
+	 * 
+	 * In 1, the ClientRegistration is retrieved exclusively using the registration is extracted from the url 
+	 * In 2, the ClientRegistration is retrieved exclusively using the session's OAuth2AuthorizationRequest's clientId.
+	 */
+	
 	public String getClientSecret(HttpServletRequest req) {
 		
 		Map.Entry<String, OAuth2AuthorizationRequest> authReq = authReqRepository.getFirstAuthorizationRequest(req);
-
-		if(authReq == null) {
-			throw new RuntimeException("No OAuth2AuthorizationRequest found!");
-		}
-		
-		String clientId = authReq.getValue().getClientId();
-
+		String clientId = null;
 		ClientRegistration reg = null;
 		
-		Iterator<ClientRegistration> it = ((InMemoryClientRegistrationRepository)clientRegistrationRepository).iterator();
-		
-		while(it.hasNext()) {
-			ClientRegistration current = it.next();
-			if(current.getClientId().equals(clientId)) {
-				reg = current;
-				break;
+		// Prefer obtaining the ClientRegistration using the clientId saved in the OAuth2AuthorizationRequest
+		// But in embedded app, this is the first time a request is made, so no
+		// OAuth2AuthorizationRequest is in the session...
+		if(authReq == null) {
+			String registrationId = authReqRepository.extractRegistrationId(req);
+			if(registrationId == null) {
+				throw new RuntimeException("No OAuth2AuthorizationRequest found!");
+			}
+			
+			reg = clientRegistrationRepository.findByRegistrationId(registrationId);
+			
+			
+		} else {
+			clientId = authReq.getValue().getClientId();
+			
+			Iterator<ClientRegistration> it = ((InMemoryClientRegistrationRepository)clientRegistrationRepository).iterator();
+			
+			while(it.hasNext()) {
+				ClientRegistration current = it.next();
+				if(current.getClientId().equals(clientId)) {
+					reg = current;
+					break;
+				}
 			}
 		}
+		
+
+		
+		
 		
 		if(reg == null) {
 			throw new RuntimeException("No ClientRegistration found for " + clientId);

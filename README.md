@@ -120,5 +120,3 @@ The default `OAuth2LoginAuthenticationProvider`...
 - A problem occurs if this application is running behind a reverse proxy, because Shopify requires SSL connections, and although the reverse proxy might connect to Shopify via SSL, the HttpServletRequest object will still have "http" as its scheme. This is problematic, because although the ShopifyOAuth2AuthorizationRequestResolver is hard coded to create a redirect uri with an https scheme (which is stored in OAuth2AuthorizationRequest), the default OAuth2LoginAuthenticationProvider uses the OAuth2AuthorizationExchangeValidator to compare the current url (http) to the redirect uri (https). 
 - This filter wraps the redirectionPath (/login/app/oauth2/code/...) and loginPath (/install/...) in a HttpServletRequestWrapper that overrides the scheme to "https" and server port to 443
 
-Todo:
-- tests!

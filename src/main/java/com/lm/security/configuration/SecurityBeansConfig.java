@@ -79,7 +79,7 @@ public class SecurityBeansConfig {
 	
 	@Bean
 	public ShopifyHttpSessionOAuth2AuthorizationRequestRepository customAuthorizationRequestRepository() {
-		return new ShopifyHttpSessionOAuth2AuthorizationRequestRepository();
+		return new ShopifyHttpSessionOAuth2AuthorizationRequestRepository(SecurityConfig.INSTALL_PATH);
 	}
 	
 

@@ -8,11 +8,18 @@ import javax.servlet.http.HttpSession;
 
 import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 public class ShopifyHttpSessionOAuth2AuthorizationRequestRepository {
 	public static final String DEFAULT_AUTHORIZATION_REQUEST_ATTR_NAME =
 			HttpSessionOAuth2AuthorizationRequestRepository.class.getName() +  ".AUTHORIZATION_REQUEST";
 	
+	private AntPathRequestMatcher installPathRequestMatcher;
+
+	public ShopifyHttpSessionOAuth2AuthorizationRequestRepository(String installPath) {
+		this.installPathRequestMatcher = new AntPathRequestMatcher(
+				installPath + "/{registrationId}");
+	}
 	
 	@SuppressWarnings("unchecked")
 	public void saveAuthorizationRequest(OAuth2AuthorizationRequest authorizationRequest, HttpServletRequest request) {
@@ -61,6 +68,22 @@ public class ShopifyHttpSessionOAuth2AuthorizationRequestRepository {
 		return null;
 		
 		
+	}
+	
+	// Used by ShopifyVerificationStrategy when the request matches authorization uri/install path
+	// provided to ShopifyOAuth2AuthorizationRequestResolver
+	public String extractRegistrationId(HttpServletRequest request) {
+		
+		String registrationId;
+		
+		if (this.installPathRequestMatcher.matches(request)) {
+			registrationId = this.installPathRequestMatcher
+					.extractUriTemplateVariables(request).get("registrationId");
+		} else {
+			registrationId = null;
+		}
+
+		return registrationId;
 	}
 	
 	

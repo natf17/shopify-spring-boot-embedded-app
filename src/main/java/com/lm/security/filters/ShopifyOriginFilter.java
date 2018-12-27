@@ -73,7 +73,6 @@ public class ShopifyOriginFilter implements Filter {
 		}
 		
 		// this filter will be applied
-
 		mustBeFromShopify = mustComeFromShopifyMatcher.matches((HttpServletRequest)request);
 		comesFromShopify = isShopifyRequest(request);
 		isAlreadyAuthenticated = isAlreadyAuthenticated();
