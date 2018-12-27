@@ -90,20 +90,38 @@ public class ShopifyAuthorizationCodeTokenResponseClient implements OAuth2Access
 		OAuth2AuthorizationCodeGrantRequest newGrantReq = new OAuth2AuthorizationCodeGrantRequest(newClientRegistration, currentExchange);
 		
 		OAuth2AccessTokenResponse resp = oAuth2AccessTokenResponseClient.getTokenResponse(newGrantReq);
-				
-		if(resp.getAdditionalParameters().containsKey(ShopifyOAuth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN)) {
-			resp.getAdditionalParameters().replace(ShopifyOAuth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN, shopName);
-
-		} else {
-			resp.getAdditionalParameters().put(ShopifyOAuth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN, shopName);
+		
+		Map<String, Object> newAdditionalParameters = new HashMap<>();
+		
+		Map<String, Object> oldAdditionalParameters = resp.getAdditionalParameters();
+		
+		if(oldAdditionalParameters != null && oldAdditionalParameters.size() > 0) {
+			newAdditionalParameters.putAll(oldAdditionalParameters);
 		}
 		
-		return resp;
+		if(newAdditionalParameters.containsKey(ShopifyOAuth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN)) {
+			newAdditionalParameters.replace(ShopifyOAuth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN, shopName);
+
+		} else {
+			newAdditionalParameters.put(ShopifyOAuth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN, shopName);
+		}
+				
+		return responseWithModAddParams(resp, newAdditionalParameters);
 	}
 	
 	// for testing purposes
 	public void setRestOperations(RestOperations restOperations) {
 		oAuth2AccessTokenResponseClient.setRestOperations(restOperations);
+	}
+	
+	private OAuth2AccessTokenResponse responseWithModAddParams(OAuth2AccessTokenResponse response, Map<String, Object> params) {
+		
+		OAuth2AccessTokenResponse.Builder builder = OAuth2AccessTokenResponse.withResponse(response);
+		
+		builder.additionalParameters(params);
+		
+		return builder.build();
+		
 	}
 	
 	

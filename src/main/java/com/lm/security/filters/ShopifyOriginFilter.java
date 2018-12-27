@@ -22,7 +22,6 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
-import com.lm.security.authentication.OAuth2PersistedAuthenticationToken;
 import com.lm.security.authentication.ShopifyOriginToken;
 import com.lm.security.authentication.ShopifyVerificationStrategy;
 
@@ -33,11 +32,10 @@ import com.lm.security.authentication.ShopifyVerificationStrategy;
  * If the request matches the authorizationPath, it must be from Shopify and contain the valid nonce.
  * If not, it uses accessDeniedHandler to generate an error
  * 
- * For any other matching path, if it came from Shopify, and it isn't already "Shopify" authenticated, it populates 
+ * For any other matching path, if it came from Shopify, and it isn't already OAuth2 authenticated, it populates 
  * the SecurityContext with a ShopifyOriginToken.
  * 
  * If not, the ShopifyOriginToken is not set.
-
  * 
  * 
  */
@@ -47,7 +45,7 @@ public class ShopifyOriginFilter implements Filter {
 	private List<AntPathRequestMatcher> applicablePaths;
 	private ShopifyVerificationStrategy shopifyVerificationStrategy;
 	private AccessDeniedHandler accessDeniedHandler = new AccessDeniedHandlerImpl();
-
+	
 	
 	public ShopifyOriginFilter(ShopifyVerificationStrategy shopifyVerificationStrategy, String authorizationPath, String... matchedPaths) {
 		this.mustComeFromShopifyMatcher = new AntPathRequestMatcher(authorizationPath);
@@ -59,33 +57,33 @@ public class ShopifyOriginFilter implements Filter {
 		
 	}
 	
+	
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
-		
 
-		
 		boolean mustBeFromShopify = false;
 		boolean comesFromShopify = false;
 		boolean isAlreadyAuthenticated = false;
 		
 		if(!applyFilter(request)) {
-			
 			chain.doFilter(request, response);
 			
 			return;
 		}
 		
 		// this filter will be applied
-		
+
 		mustBeFromShopify = mustComeFromShopifyMatcher.matches((HttpServletRequest)request);
 		comesFromShopify = isShopifyRequest(request);
 		isAlreadyAuthenticated = isAlreadyAuthenticated();
 				
 		if(mustBeFromShopify) {
+
 			if(comesFromShopify && hasValidNonce(request)) {
 
 				if(!isAlreadyAuthenticated) {
+
 					SecurityContextHolder.getContext().setAuthentication(new ShopifyOriginToken(true));
 				}
 			} else {
@@ -96,31 +94,33 @@ public class ShopifyOriginFilter implements Filter {
 			}
 			
 		} else {
+
 			if(comesFromShopify) {
+
 				if(!isAlreadyAuthenticated) {
 					SecurityContextHolder.getContext().setAuthentication(new ShopifyOriginToken(true));
 				}
 			}
-			
-		}
 
+		}
 		
 		chain.doFilter(request, response);
 
 	}
 	
 	/*
-	 * 1. Removes hmac parameter from query string
-	 * 2. Builds query string
+	 * 
+	 * Uses ShopifyVerificationStrategy to...
+	 * 
+	 * 1. Remove hmac parameter from query string
+	 * 2. Build query string
 	 * 3. HMAC-SHA256(query)
 	 * 4. Is (3) = hmac value?
+	 * 
 	 */
 	private boolean isShopifyRequest(ServletRequest request) {
-		
 		return shopifyVerificationStrategy.isShopifyRequest((HttpServletRequest)request);
-		
-		
-		
+
 	}
 	
 	private boolean hasValidNonce(ServletRequest request) {
@@ -131,7 +131,7 @@ public class ShopifyOriginFilter implements Filter {
 	private boolean isAlreadyAuthenticated() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		
-		if(auth instanceof OAuth2PersistedAuthenticationToken || auth instanceof OAuth2AuthenticationToken) {
+		if(auth instanceof OAuth2AuthenticationToken) {
 			return true;
 		}
 		

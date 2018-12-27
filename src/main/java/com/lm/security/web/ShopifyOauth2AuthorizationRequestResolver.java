@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.keygen.Base64StringKeyGenerator;
 import org.springframework.security.crypto.keygen.StringKeyGenerator;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
@@ -19,7 +20,6 @@ import org.springframework.security.web.util.UrlUtils;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.lm.security.authentication.OAuth2PersistedAuthenticationToken;
 import com.lm.security.service.TokenService;
 
 /*
@@ -53,14 +53,13 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 	 */
 	@Override
 	public OAuth2AuthorizationRequest resolve(HttpServletRequest request) {
-		
+
 		// is already properly authenticated, skip
 		if(isAuthenticated(request)) {
 			return null;
 		}
-		
-		// At this point, either the request came from Shopify, or it didn't.
-		// If it didn't, make sure shop param was provided
+
+		// At this point, either the request came from Shopify, or make sure shop param was provided
 		String shopName = null;
 		
 		shopName = this.getShopName(request);
@@ -81,8 +80,9 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 		} else {
 			registrationId = null;
 		}
-		
+
 		if(registrationId == null) {
+
 			return null;
 		}
 		
@@ -91,7 +91,6 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 		if (clientRegistration == null) {
 			throw new IllegalArgumentException("Invalid Client Registration: " + registrationId);
 		}
-		
 		
 		// only the Authorization code grant is accepted
 		OAuth2AuthorizationRequest.Builder builder;
@@ -103,16 +102,12 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 					") for Client Registration: " + clientRegistration.getRegistrationId());
 		}
 		
-		
-		
 		String redirectUriStr = this.expandRedirectUri(request, clientRegistration);
-
 
 		Map<String, Object> additionalParameters = new HashMap<>();
 		additionalParameters.put(OAuth2ParameterNames.REGISTRATION_ID, clientRegistration.getRegistrationId());
 		additionalParameters.put(SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN, shopName);
 		
-
 		OAuth2AuthorizationRequest authorizationRequest = builder
 				.clientId(clientRegistration.getClientId())
 				.authorizationUri(this.generateAuthorizationUri(request, clientRegistration.getProviderDetails().getAuthorizationUri()))
@@ -129,7 +124,6 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 				
 		// DO NOT redirect, build redirecturi: DefaultRedirectStrategy		
 		authorizationRedirectStrategy.saveRedirectAuthenticationUris(request, authorizationRequest);
-		
 		
 		return null;
 	}
@@ -151,6 +145,7 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 		// EX: "{baseUrl}/oauth2/code/{registrationId}"
 		Map<String, String> uriVariables = new HashMap<>();
 		uriVariables.put("registrationId", clientRegistration.getRegistrationId());
+
 		String baseUrl = UriComponentsBuilder.fromHttpUrl(UrlUtils.buildFullRequestUrl(request))
 				.replaceQuery(null)
 				.replacePath(request.getContextPath())
@@ -177,7 +172,6 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 							.fromHttpUrl(authorizationUriTemplate)
 							.buildAndExpand(uriVariables)
 							.toUriString();
-		
 
 		return authorizationUri;
 	}
@@ -193,7 +187,7 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 	}
 	
 	private boolean isAuthenticated(HttpServletRequest request) {
-		if(SecurityContextHolder.getContext().getAuthentication() instanceof OAuth2PersistedAuthenticationToken) {
+		if(SecurityContextHolder.getContext().getAuthentication() instanceof OAuth2AuthenticationToken) {
 			return true;
 		}
 		

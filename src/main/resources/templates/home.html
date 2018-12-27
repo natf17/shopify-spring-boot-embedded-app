@@ -5,10 +5,11 @@
   
   
   <script th:inline="text">
+
   
   /*<![CDATA[*/
 		
-		var redirectFromParentPath = '[(${#authentication.principal.parentRedirectUri})]';
+  		var redirectFromParentPath = '[(${#authentication.principal.parentRedirectUri})]';
 		var redirectFromIFramePath = '[(${#authentication.principal.iFrameRedirectUri})]';
 		
 		
@@ -16,7 +17,9 @@
 		  // If the current window is the 'parent', change the URL by setting location.href parentRedirectUri
 		  if (window.top == window.self) {
 			  console.log("In parent" + "url: " + redirectFromParentPath);
-		    window.location.assign(redirectFromParentPath);
+			  if(redirectFromParentPath){
+				    window.location.assign(redirectFromParentPath);
+			  }
 		
 		  // If the current window is the 'child', change the parent's URL with ShopifyApp.redirect
 		  } else {
@@ -29,18 +32,12 @@
   
   
   
-  <title>LouisMartinApp</title>
+  <title>TEST</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-  
-  
-  
-  <sec:authorize access="!isAuthenticated()">
-  Enter the store you wish to log in to.
-  </sec:authorize>
  
 </head>
 <body>
-<h1>Hello</h1>
+<h1>WELCOME</h1>
  
 </body>
 </html>

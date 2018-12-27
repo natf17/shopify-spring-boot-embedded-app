@@ -43,5 +43,25 @@ public class ShopifyHttpSessionOAuth2AuthorizationRequestRepository {
 		return authorizationRequests;
 	}
 	
+	public Map.Entry<String, OAuth2AuthorizationRequest> getFirstAuthorizationRequest(HttpServletRequest request) {
+		
+		Map<String, OAuth2AuthorizationRequest> reqs = this.getAuthorizationRequests(request);
+				
+		if(reqs.size() < 1) {
+			return null;
+		}
+		
+		for(Map.Entry<String, OAuth2AuthorizationRequest> authReqEntry : reqs.entrySet()) {
+			if(authReqEntry.getValue() != null) {
+				return authReqEntry;
+			}
+	
+		}
+		
+		return null;
+		
+		
+	}
+	
 	
 }

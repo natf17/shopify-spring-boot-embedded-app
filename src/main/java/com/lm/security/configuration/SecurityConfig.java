@@ -10,12 +10,14 @@ import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResp
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
 
 import com.lm.security.authentication.ShopifyVerificationStrategy;
+import com.lm.security.filters.BehindHttpsProxyFilter;
 import com.lm.security.filters.ShopifyExistingTokenFilter;
 import com.lm.security.filters.ShopifyOriginFilter;
 import com.lm.security.service.TokenService;
@@ -31,7 +33,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	public static final String LOGIN_ENDPOINT = "/init";
 	public static final String LOGOUT_ENDPOINT = "/logout";
 	public static final String AUTHENTICATION_FALURE_URL = "/auth/error";
-		
+	
 
 	@Autowired
 	ApplicationContext ctx;
@@ -61,10 +63,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 		http.addFilterAfter(new ShopifyOriginFilter(shopifyVerficationStrategy, ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH), LogoutFilter.class);
 		http.addFilterAfter(new ShopifyExistingTokenFilter(this.tokenService, ANY_INSTALL_PATH), ShopifyOriginFilter.class);
-		
+		http.addFilterBefore(new BehindHttpsProxyFilter(ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH), OAuth2AuthorizationRequestRedirectFilter.class);
+
 		http
 	          .authorizeRequests()
 	          	.mvcMatchers(LOGIN_ENDPOINT).permitAll()
+	          	.mvcMatchers("/favicon.ico").permitAll()
 	          	.anyRequest().authenticated()
 	          .and()
 	          .logout()
@@ -84,6 +88,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	          	.successHandler(successHandler)
 	          	.loginPage(LOGIN_ENDPOINT) // for use outside of an embedded app since it involves a redirect
 	          	.failureUrl(AUTHENTICATION_FALURE_URL); // see AbstractAuthenticationProcessingFilter
+		
+
 		          
 	}
 	

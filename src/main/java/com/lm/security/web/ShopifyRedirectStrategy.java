@@ -27,7 +27,7 @@ public class ShopifyRedirectStrategy extends DefaultRedirectStrategy {
 		String authorizationUri = authorizationRequest.getAuthorizationUri();
 
 		String parentFrameRedirectUrl = super.calculateRedirectUrl(request.getContextPath(), authorizationUri);
-		
+
 		SecurityContextHolder.getContext().setAuthentication(new AuthenticationRedirectUriHolder(
 																addRedirectParams(parentFrameRedirectUrl, authorizationRequest), 
 																addRedirectParams(I_FRAME_REDIRECT_URI, authorizationRequest)
@@ -57,7 +57,6 @@ public class ShopifyRedirectStrategy extends DefaultRedirectStrategy {
 								.build()
 								.toString();
 		
-		System.out.println(re);
 		return re;
 
 	}

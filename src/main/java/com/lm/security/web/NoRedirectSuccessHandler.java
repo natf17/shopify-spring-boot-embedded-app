@@ -2,6 +2,7 @@ package com.lm.security.web;
 
 import java.io.IOException;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -10,10 +11,15 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 
+import com.lm.security.configuration.SecurityConfig;
+
 /*
  * This success handler wraps the default SavedRequestAwareAuthenticationSuccessHandler
  * so that it will perform as intended, but without the redirect support.
  * Thus, the DefaultRedirectStrategy is replaced with an empty implementation.
+ * 
+ * Afterwards, however, it will forward to the the "authentication url" resource.
+ * 
  */
 public class NoRedirectSuccessHandler implements AuthenticationSuccessHandler {
 	
@@ -31,7 +37,10 @@ public class NoRedirectSuccessHandler implements AuthenticationSuccessHandler {
 			Authentication authentication) throws IOException, ServletException {
 		
 		defaultHandler.onAuthenticationSuccess(request, response, authentication);
-
+		
+		RequestDispatcher rs = request.getRequestDispatcher(SecurityConfig.AUTHORIZATION_REDIRECT_PATH);
+		
+		rs.forward(request, response);
 		
 	}
 

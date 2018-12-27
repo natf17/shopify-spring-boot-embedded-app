@@ -18,7 +18,7 @@ public class DisabledShopifyVerfificationConfig {
 	class NullVerificationStrategy extends ShopifyVerificationStrategy {
 		
 		public NullVerificationStrategy() {
-			super(null);
+			super(null,null);
 		}
 		
 		@Override

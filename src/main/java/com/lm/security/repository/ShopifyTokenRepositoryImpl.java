@@ -2,7 +2,9 @@ package com.lm.security.repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.joining;
 
@@ -10,14 +12,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.stereotype.Repository;
 
 
 @Repository
 public class ShopifyTokenRepositoryImpl implements TokenRepository {
 	
-	private static String SELECT_TOKEN_FOR_SHOP = "SELECT access_token, salt FROM StoreAccessTokens WHERE shop=?";
+	private static String SELECT_INFO_FOR_SHOP = "SELECT access_token, salt, scope FROM StoreAccessTokens WHERE shop=?";
 	private static final String SAVE_ACCESS_TOKEN_CREDENTIALS = "INSERT INTO StoreAccessTokens(shop,access_token,salt,scope) VALUES(?,?,?,?)";
+	private static final String UPDATE_TOKEN_FOR_SHOP = "UPDATE StoreAccessTokens SET access_token=?, salt=? WHERE shop=?";
 	
 	private JdbcTemplate jdbc;
 	
@@ -27,11 +31,12 @@ public class ShopifyTokenRepositoryImpl implements TokenRepository {
 	}
 
 	@Override
-	public EncryptedTokenAndSalt findTokenForRequest(String shop) {
-		EncryptedTokenAndSalt token = null;
+	public OAuth2AccessTokenWithSalt findTokenForRequest(String shop) {
+		
+		OAuth2AccessTokenWithSalt token = null;
 		
 		try {
-			token = jdbc.queryForObject(SELECT_TOKEN_FOR_SHOP, new StoreTokensMapper(), shop);
+			token = jdbc.queryForObject(SELECT_INFO_FOR_SHOP, new StoreTokensMapper(), shop);
 		} catch(EmptyResultDataAccessException ex) {
 			token = null;
 
@@ -40,15 +45,20 @@ public class ShopifyTokenRepositoryImpl implements TokenRepository {
 		return token;
 	}
 	
-	class StoreTokensMapper implements RowMapper<EncryptedTokenAndSalt> {
+	class StoreTokensMapper implements RowMapper<OAuth2AccessTokenWithSalt> {
 
 		@Override
-		public EncryptedTokenAndSalt mapRow(ResultSet rs, int arg) throws SQLException {
+		public OAuth2AccessTokenWithSalt mapRow(ResultSet rs, int arg) throws SQLException {
 			String encryptedToken = rs.getString("access_token");
 			String salt = rs.getString("salt");
+			String scope = rs.getString("scope");
 			
-			return new EncryptedTokenAndSalt(encryptedToken, salt);
-		
+			Set<String> scopes = Arrays.asList(scope.split(",")).stream().collect(Collectors.toSet());
+			
+			OAuth2AccessToken access_Token = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, encryptedToken, null, null, scopes);
+			
+			return new OAuth2AccessTokenWithSalt(access_Token, salt);
+			
 		}
 		
 	}
@@ -63,5 +73,11 @@ public class ShopifyTokenRepositoryImpl implements TokenRepository {
 		jdbc.update(SAVE_ACCESS_TOKEN_CREDENTIALS, shop, encryptedTokenAndSalt.getEncryptedToken(), encryptedTokenAndSalt.getSalt(), scopeString);
 
 	}
+
+	@Override
+	public void updateKey(String shop, EncryptedTokenAndSalt encryptedTokenAndSalt) {
+		jdbc.update(UPDATE_TOKEN_FOR_SHOP, encryptedTokenAndSalt.getEncryptedToken(), encryptedTokenAndSalt.getSalt(), shop);		
+	}
+	
 	
 }

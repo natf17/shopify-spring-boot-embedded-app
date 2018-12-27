@@ -32,6 +32,8 @@ import com.lm.security.web.ShopifyOAuth2AuthorizationRequestResolver;
 @Configuration
 public class SecurityBeansConfig {
 	
+	public static final String SHOPIFY_REGISTRATION_ID = "shopify";
+	
 	@Autowired
 	private TokenService tokenService;
 	
@@ -87,22 +89,22 @@ public class SecurityBeansConfig {
 			 @Value("${shopify.client.scope}")String scope) {
 		
 
-        return ClientRegistration.withRegistrationId("shopify")
+        return ClientRegistration.withRegistrationId(SHOPIFY_REGISTRATION_ID)
             .clientId(clientId)
             .clientSecret(clientSecret)
             .clientAuthenticationMethod(ClientAuthenticationMethod.POST)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .redirectUriTemplate("{baseUrl}" + SecurityConfig.AUTHORIZATION_REDIRECT_PATH + "{registrationId}")
+            .redirectUriTemplate("{baseUrl}" + SecurityConfig.AUTHORIZATION_REDIRECT_PATH + "/{registrationId}")
             .scope(scope.split(","))
-            .authorizationUri("https://{shop}/admin/osauth/authorize")
+            .authorizationUri("https://{shop}/admin/oauth/authorize")
             .tokenUri("https://{shop}/admin/oauth/access_token")
             .clientName("Shopify")
             .build();
     }
 	
 	@Bean
-	public ShopifyVerificationStrategy shopifyVerficationStrategy() {
-		return new ShopifyVerificationStrategy(customAuthorizationRequestRepository());
+	public ShopifyVerificationStrategy shopifyVerficationStrategy(ClientRegistrationRepository clientRegistrationRepository) {
+		return new ShopifyVerificationStrategy(clientRegistrationRepository, customAuthorizationRequestRepository());
 	}
 
 }

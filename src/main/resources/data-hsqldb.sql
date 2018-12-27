@@ -1,1 +1,1 @@
-INSERT INTO STOREACCESSTOKENS(shop,access_token,salt,scope) VALUES('lmdev.myshopify.com', '09c44d9b0ed8ed0148367c9ce40fe7b0', 'fjhaskrjhfksehrgbksjherkjsrekh', 'read_inventory,write_inventory');	
+INSERT INTO StoreAccessTokens(shop,access_token,salt,scope) VALUES('lmdev.myshopify.com','261e51851322624704d869ebe85c7da3ae73eb20a65d3ed5107d56fbef3dc9e9471ca8077f4b48e83613065fd5397331','e667cbef7fa23d71','read_products,write_products');

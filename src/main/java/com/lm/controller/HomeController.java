@@ -22,7 +22,6 @@ public class HomeController {
 	
 	@RequestMapping(path = SecurityConfig.ANY_INSTALL_PATH, method = RequestMethod.GET)
 	public String installAndHome() {
-		
 				
 		return "home";
 	}
@@ -34,7 +33,6 @@ public class HomeController {
 	@RequestMapping(path = SecurityConfig.LOGIN_ENDPOINT, method = RequestMethod.GET)
 	public String selectStore() {
 		
-		
 		return "selectStore";
 	}
 	
@@ -45,7 +43,6 @@ public class HomeController {
 	@RequestMapping(path = SecurityConfig.ANY_AUTHORIZATION_REDIRECT_PATH, method = RequestMethod.GET)
 	public String installationSuccess() {
 		
-				
 		return "success";
 	}
 	

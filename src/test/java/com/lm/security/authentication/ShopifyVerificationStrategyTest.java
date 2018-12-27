@@ -2,14 +2,16 @@ package com.lm.security.authentication;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.Before;
 import org.junit.Test;
 
 import org.junit.Assert;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doReturn;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,118 +20,192 @@ public class ShopifyVerificationStrategyTest {
 	
 	private HttpServletRequest req;
 	
-	private ShopifyVerificationStrategy strategy = new ShopifyVerificationStrategy(null);
+	//private ShopifyVerificationStrategy strategy = new ShopifyVerificationStrategy(null,null);
+	private String secret = "6a031b0bd6af4eb";
 	
 	@Before
 	public void startup() {
-		req = mock(HttpServletRequest.class);
 		
 	}
 	
 	@Test
 	public void validHMACRandomReturnsTrue() {
+		// string without HMAC
 		String stringNoHMAC = "code=fsv&shop=some-shop.myshopify.com&state=0.6784241404160823&timestamp=1337178173";
-		String hmacValue = DigestUtils.sha256Hex(stringNoHMAC);
+		
+		ShopifyVerificationStrategy strategy = spy(new ShopifyVerificationStrategy(null,null));
+
+		// The hash of the string without the HMAC
+		String hmacValue = strategy.hash(secret, stringNoHMAC);
+		
+		// The query piece with the valid HMAC
 		String hmacString = ShopifyVerificationStrategy.HMAC_PARAMETER + "=" + hmacValue + "&";
 
+		// The full query string
 		String validCompleteString = "code=fsv&" + hmacString + "shop=some-shop.myshopify.com&state=0.6784241404160823&timestamp=1337178173";
 		
-		when(req.getQueryString()).thenReturn(validCompleteString);
-		
+		// The HttpServletRequest has the valid HMAC parameter
 		Map<String, String[]> paramMap = new HashMap<>();
 		paramMap.put(ShopifyVerificationStrategy.HMAC_PARAMETER, new String[] {hmacValue});
 		
-		
+		req = mock(HttpServletRequest.class);
+
+		when(req.getQueryString()).thenReturn(validCompleteString);
 		when(req.getParameterMap()).thenReturn(paramMap);
+
+
+		// calling getClientSecret in the strategy will always return a valid secret
+		doReturn(secret).when(strategy).getClientSecret(any());
+
 		
-		Assert.assertEquals(true, this.strategy.isShopifyRequest(req));
+		Assert.assertEquals(true, strategy.isShopifyRequest(req));
 		
 		
 	}
 	
 	@Test
 	public void validHMACLastReturnsTrue() {
+		
+		// string without HMAC
 		String stringNoHMAC = "code=fsv&shop=some-shop.myshopify.com&state=0.6784241404160823&timestamp=1337178173";
-		String hmacValue = DigestUtils.sha256Hex(stringNoHMAC);
+		
+		ShopifyVerificationStrategy strategy = spy(new ShopifyVerificationStrategy(null,null));
+
+		// The hash of the string without the HMAC
+		String hmacValue = strategy.hash(secret, stringNoHMAC);
+		
+		// The query piece with the valid HMAC
 		String hmacString = "&" + ShopifyVerificationStrategy.HMAC_PARAMETER + "=" + hmacValue;
 
+		// The full query string
 		String validCompleteString = "code=fsv&shop=some-shop.myshopify.com&state=0.6784241404160823&timestamp=1337178173" + hmacString;
 		
-		when(req.getQueryString()).thenReturn(validCompleteString);
-		
+		// The HttpServletRequest has the valid HMAC parameter
 		Map<String, String[]> paramMap = new HashMap<>();
 		paramMap.put(ShopifyVerificationStrategy.HMAC_PARAMETER, new String[] {hmacValue});
 		
-		
+		req = mock(HttpServletRequest.class);
+
+		when(req.getQueryString()).thenReturn(validCompleteString);
 		when(req.getParameterMap()).thenReturn(paramMap);
+
+
+		// calling getClientSecret in the strategy will always return a valid secret
+		doReturn(secret).when(strategy).getClientSecret(any());
+
 		
-		Assert.assertEquals(true, this.strategy.isShopifyRequest(req));
+		Assert.assertEquals(true, strategy.isShopifyRequest(req));
+
 		
 		
 	}
 	
+
 	
 	@Test
 	public void invalidHMACLastReturnsFalse() {
+		
+		
+		// string without HMAC
 		String stringNoHMAC = "code=fsv&shop=some-shop.myshopify.com&state=0.6784241404160823&timestamp=1337178173";
-		String hmacValue = DigestUtils.sha256Hex(stringNoHMAC) + "asd";
+		
+		ShopifyVerificationStrategy strategy = spy(new ShopifyVerificationStrategy(null,null));
+
+		// The wrong hash of the string without the HMAC
+		String hmacValue = strategy.hash(secret, stringNoHMAC) + "asd";
+		
+		// The query piece with the valid HMAC
 		String hmacString = "&" + ShopifyVerificationStrategy.HMAC_PARAMETER + "=" + hmacValue;
 
+		// The full query string
 		String validCompleteString = "code=fsv&shop=some-shop.myshopify.com&state=0.6784241404160823&timestamp=1337178173" + hmacString;
 		
-		when(req.getQueryString()).thenReturn(validCompleteString);
-		
+		// The HttpServletRequest has the valid HMAC parameter
 		Map<String, String[]> paramMap = new HashMap<>();
 		paramMap.put(ShopifyVerificationStrategy.HMAC_PARAMETER, new String[] {hmacValue});
 		
-		
+		req = mock(HttpServletRequest.class);
+
+		when(req.getQueryString()).thenReturn(validCompleteString);
 		when(req.getParameterMap()).thenReturn(paramMap);
+
+
+		// calling getClientSecret in the strategy will always return a valid secret
+		doReturn(secret).when(strategy).getClientSecret(any());
+
 		
-		Assert.assertEquals(false, this.strategy.isShopifyRequest(req));
-		
+		Assert.assertEquals(false, strategy.isShopifyRequest(req));
+
 		
 	}
 	
+	
+	
 	@Test
 	public void noHMACReturnsFalse() {
+		
+		// string without HMAC
 		String stringNoHMAC = "code=fsv&shop=some-shop.myshopify.com&state=0.6784241404160823&timestamp=1337178173";
 		
-		when(req.getQueryString()).thenReturn(stringNoHMAC);
+		ShopifyVerificationStrategy strategy = spy(new ShopifyVerificationStrategy(null,null));
+
 		
+		// The HttpServletRequest has some other parameter
 		Map<String, String[]> paramMap = new HashMap<>();
 		paramMap.put("code", new String[] {"fsv"});
 		
-		
+		req = mock(HttpServletRequest.class);
+
+		when(req.getQueryString()).thenReturn(stringNoHMAC);
 		when(req.getParameterMap()).thenReturn(paramMap);
+
+
+		// calling getClientSecret in the strategy will always return a valid secret
+		doReturn(secret).when(strategy).getClientSecret(any());
+
 		
-		Assert.assertEquals(false, this.strategy.isShopifyRequest(req));
+		Assert.assertEquals(false, strategy.isShopifyRequest(req));
 		
 		
 	}
 	
 	@Test
 	public void multipleHMACReturnsFalse() {
+		
+		// string without HMAC
 		String stringNoHMAC = "code=fsv&shop=some-shop.myshopify.com&state=0.6784241404160823&timestamp=1337178173";
-		String hmacValue = DigestUtils.sha256Hex(stringNoHMAC) + "asd";
+		
+		ShopifyVerificationStrategy strategy = spy(new ShopifyVerificationStrategy(null,null));
+
+		// The hash of the string without the HMAC
+		String hmacValue = strategy.hash(secret, stringNoHMAC);
+		
+		// The query piece with the valid HMAC
 		String hmacString = "&" + ShopifyVerificationStrategy.HMAC_PARAMETER + "=" + hmacValue;
 
+		// The full query string with multiple HMACs
 		String validCompleteString = "code=fsv&shop=some-shop.myshopify.com&state=0.6784241404160823&timestamp=1337178173" + hmacString + hmacString;
 		
-		when(req.getQueryString()).thenReturn(validCompleteString);
-		
+		// The HttpServletRequest has multiple valid HMAC parameters
 		Map<String, String[]> paramMap = new HashMap<>();
 		paramMap.put(ShopifyVerificationStrategy.HMAC_PARAMETER, new String[] {hmacValue});
 		paramMap.put(ShopifyVerificationStrategy.HMAC_PARAMETER, new String[] {hmacValue});
+
 		
-		
+		req = mock(HttpServletRequest.class);
+
+		when(req.getQueryString()).thenReturn(validCompleteString);
 		when(req.getParameterMap()).thenReturn(paramMap);
+
+
+		// calling getClientSecret in the strategy will always return a valid secret
+		doReturn(secret).when(strategy).getClientSecret(any());
+
 		
-		Assert.assertEquals(false, this.strategy.isShopifyRequest(req));
-		
+		Assert.assertEquals(false, strategy.isShopifyRequest(req));
 		
 		
 	}
-	
 	
 
 }
