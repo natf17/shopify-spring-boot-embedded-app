@@ -21,7 +21,7 @@ import com.lm.security.repository.EncryptedTokenAndSalt;
 import com.lm.security.repository.TokenRepository;
 import com.lm.security.repository.TokenRepository.OAuth2AccessTokenWithSalt;
 
-@Service
+
 public class TokenService {
 	
 	public static final String SHOP_ATTRIBUTE_NAME = "shop";
@@ -30,21 +30,26 @@ public class TokenService {
 	private CipherPassword cipherPassword;
 	private ClientRegistrationRepository clientRepository;
 	
-	
-	@Autowired
+	public TokenService(TokenRepository tokenRepository, CipherPassword cipherPassword, ClientRegistrationRepository clientRepository) {
+		this.tokenRepository = tokenRepository;
+		this.cipherPassword = cipherPassword;
+		this.clientRepository = clientRepository;
+
+	}
+	/*
 	public void setTokenRepository(TokenRepository tokenRepository) {
 		this.tokenRepository = tokenRepository;
 	}
 	
-	@Autowired
+	
 	public void setCipherPassword(CipherPassword cipherPassword) {
 		this.cipherPassword = cipherPassword;
 	}
 	
-	@Autowired
+	
 	public void setClientRepository(ClientRegistrationRepository clientRepository) {
 		this.clientRepository = clientRepository;
-	}
+	}*/
 	
 	public void saveNewStore(OAuth2AuthorizedClient authorizedClient, Authentication principal) {
 		

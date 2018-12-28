@@ -20,6 +20,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 
 import com.lm.security.authentication.CipherPassword;
 import com.lm.security.authentication.ShopifyVerificationStrategy;
+import com.lm.security.repository.TokenRepository;
 import com.lm.security.service.DefaultShopifyUserService;
 import com.lm.security.service.ShopifyOAuth2AuthorizedClientService;
 import com.lm.security.service.TokenService;
@@ -35,7 +36,7 @@ public class SecurityBeansConfig {
 	public static final String SHOPIFY_REGISTRATION_ID = "shopify";
 	
 	@Autowired
-	private TokenService tokenService;
+	private TokenRepository tokenRepository;
 	
 	@Bean
 	CipherPassword cipherPassword(@Value("${lm.security.cipher.password}") String password) {
@@ -68,8 +69,8 @@ public class SecurityBeansConfig {
 	
 	// used by AuthenticatedPrincipalOAuth2AuthorizedClientRepository
 	@Bean
-	public OAuth2AuthorizedClientService clientService() {
-		return new ShopifyOAuth2AuthorizedClientService(this.tokenService);
+	public OAuth2AuthorizedClientService clientService(TokenService tokenService) {
+		return new ShopifyOAuth2AuthorizedClientService(tokenService);
 	}
 	
 	@Bean
@@ -80,6 +81,11 @@ public class SecurityBeansConfig {
 	@Bean
 	public ShopifyHttpSessionOAuth2AuthorizationRequestRepository customAuthorizationRequestRepository() {
 		return new ShopifyHttpSessionOAuth2AuthorizationRequestRepository(SecurityConfig.INSTALL_PATH);
+	}
+	
+	@Bean
+	public TokenService tokenService(CipherPassword cipherPassword, ClientRegistrationRepository clientRegistrationRepository) {
+		return new TokenService(this.tokenRepository, cipherPassword, clientRegistrationRepository);
 	}
 	
 
