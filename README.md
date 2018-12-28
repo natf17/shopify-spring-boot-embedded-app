@@ -110,12 +110,12 @@ The default `OAuth2LoginAuthenticationProvider`...
 - Invoked by `OAuth2LoginAuthenticationFilter` when it invokes the default `AuthenticatedPrincipalOAuth2AuthorizedClientRepository` after a user has authenticated
 - Instead of saving them in memory, this implementation attempts to use the custom tokenService to save the store in a database, or to update the store credentials if this store has already been "installed".
 
-### 'ShopifyVerificationStrategy'
+### `ShopifyVerificationStrategy`
 - Invoked by `ShopifyOriginFilter`
 - A request came from Shopify if it has a valid HMAC parameter
 - But for the "whitelisted redirection url", it is also necessary that it provide a nonce in the "state" parameter. Since this is a redirection url, the `OAuth2AuthorizationRequest` should have already been saved in the HttpSession. See `ShopifyHttpSessionOAuth2AuthorizationRequestRepository`
 
-### 'BehindHttpsProxyFilter'
+### `BehindHttpsProxyFilter`
 - Invoked before the OAuth2LoginAuthenticationFilter
 - A problem occurs if this application is running behind a reverse proxy, because Shopify requires SSL connections, and although the reverse proxy might connect to Shopify via SSL, the HttpServletRequest object will still have "http" as its scheme. This is problematic, because although the ShopifyOAuth2AuthorizationRequestResolver is hard coded to create a redirect uri with an https scheme (which is stored in OAuth2AuthorizationRequest), the default OAuth2LoginAuthenticationProvider uses the OAuth2AuthorizationExchangeValidator to compare the current url (http) to the redirect uri (https). 
 - This filter wraps the redirectionPath (/login/app/oauth2/code/...) and loginPath (/install/...) in a HttpServletRequestWrapper that overrides the scheme to "https" and server port to 443
