@@ -14,6 +14,9 @@ public class AuthenticationRedirectUriHolder implements Authentication {
 	private RedirectUris redirectUris;
 	
 	public AuthenticationRedirectUriHolder(String parentRedirectUri, String iFrameRedirectUri) {
+		System.out.println(parentRedirectUri);
+		System.out.println(iFrameRedirectUri);
+		
 		this.redirectUris = new RedirectUris(parentRedirectUri, iFrameRedirectUri);
 	}
 
