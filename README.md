@@ -11,6 +11,7 @@ See https://www.oracle.com/technetwork/java/javase/downloads/jce-all-download-51
 - If the request is to the application installation path, this filter sets a `ShopifyOriginToken` as the `Authentication` object if it is determined that the request came from Shopify (and if there is no "Shopify" Authentication object already).
 - If the request is to what Shopify calls the "whitelisted redirection url", and if the request did not come from Shopify, a 403 response is sent via the AccessDeniedHandler.
 - See ShopifyVerificationStrategy for how it is determined if a request came from Shopify
+- A session attrbiute is added ("SHOPIFY_EMBEDDED_APP", true) if authentication is being attempted as an embedded app
 
 ### `ShopifyExistingTokenFilter`
 - This filter matches the installation endpoint path (/install)
@@ -120,3 +121,11 @@ The default `OAuth2LoginAuthenticationProvider`...
 - A problem occurs if this application is running behind a reverse proxy, because Shopify requires SSL connections, and although the reverse proxy might connect to Shopify via SSL, the HttpServletRequest object will still have "http" as its scheme. This is problematic, because although the ShopifyOAuth2AuthorizationRequestResolver is hard coded to create a redirect uri with an https scheme (which is stored in OAuth2AuthorizationRequest), the default OAuth2LoginAuthenticationProvider uses the OAuth2AuthorizationExchangeValidator to compare the current url (http) to the redirect uri (https). 
 - This filter wraps the redirectionPath (/login/app/oauth2/code/...) and loginPath (/install/...) in a HttpServletRequestWrapper that overrides the scheme to "https" and server port to 443
 
+
+## Logging out
+Coming soon
+logout url: /logout
+log out success url: /logout
+
+## Uninstalling
+Coming soon

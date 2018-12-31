@@ -34,7 +34,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	public static final String LOGOUT_ENDPOINT = "/logout";
 	public static final String AUTHENTICATION_FALURE_URL = "/auth/error";
 	
-
+	
 	@Autowired
 	ApplicationContext ctx;
 	
