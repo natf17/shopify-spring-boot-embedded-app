@@ -44,11 +44,11 @@ public class NotFromShopifyRequests {
 		this.mockMvc.perform(get(INSTALL_PATH))
 					.andExpect(redirectedUrlPattern("**" + LOGIN_ENDPOINT));							
 	}
-	
+	/*
 	
 	/*
 	 * Should provide redirection urls for JS if the request doesn't come from Shopify but a shop parameter is included
-	 */
+	 
 	@Test
 	public void whenShopParamPresentThenJSRedirect() throws Exception {
 	
@@ -59,7 +59,7 @@ public class NotFromShopifyRequests {
 	
 	/*
 	 * The authorization endpoint MUST be invoked by Shopify ONLY
-	 */
+	 
 	@Test
 	public void whenAuthEndpointThenFail() throws Exception {
 	
@@ -71,7 +71,7 @@ public class NotFromShopifyRequests {
 	 * Access some other protected resource.
 	 * Since we are not authenticated, authentication entry point 
 	 * should redirect to LOGIN_ENDPOINT
-	 */
+	 
 	@Test
 	public void whenProtectedResourceThenRedirect() throws Exception {
 	
@@ -84,12 +84,13 @@ public class NotFromShopifyRequests {
 	/*
 	 * Access LOGIN_ENDPOINT
 	 * ... We are not authenticated
-	 */
+	 
 	@Test
 	public void whenLoginThenOk() throws Exception {
 	
 		this.mockMvc.perform(get(LOGIN_ENDPOINT))
 					.andExpect(status().is2xxSuccessful());
 	}
+	*/
 	
 }

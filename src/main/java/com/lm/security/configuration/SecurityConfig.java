@@ -33,6 +33,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	public static final String LOGIN_ENDPOINT = "/init";
 	public static final String LOGOUT_ENDPOINT = "/logout";
 	public static final String AUTHENTICATION_FALURE_URL = "/auth/error";
+	public static final String UNINSTALL_URI = "/store/uninstall";
 	
 	
 	@Autowired
