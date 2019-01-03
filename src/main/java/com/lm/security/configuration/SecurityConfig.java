@@ -20,6 +20,7 @@ import com.lm.security.authentication.ShopifyVerificationStrategy;
 import com.lm.security.filters.BehindHttpsProxyFilter;
 import com.lm.security.filters.ShopifyExistingTokenFilter;
 import com.lm.security.filters.ShopifyOriginFilter;
+import com.lm.security.filters.UninstallFilter;
 import com.lm.security.service.TokenService;
 
 
@@ -64,7 +65,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		http.addFilterAfter(new ShopifyOriginFilter(shopifyVerficationStrategy, ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH), LogoutFilter.class);
 		http.addFilterAfter(new ShopifyExistingTokenFilter(this.tokenService, ANY_INSTALL_PATH), ShopifyOriginFilter.class);
 		http.addFilterBefore(new BehindHttpsProxyFilter(ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH), OAuth2AuthorizationRequestRedirectFilter.class);
-
+		http.addFilterBefore(new UninstallFilter(UNINSTALL_URI, shopifyVerficationStrategy, tokenService), BehindHttpsProxyFilter.class);
+		
 		http.headers().frameOptions().disable()
 			  .and()
 	          .authorizeRequests()
@@ -88,9 +90,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	          .and()
 	          	.successHandler(successHandler)
 	          	.loginPage(LOGIN_ENDPOINT) // for use outside of an embedded app since it involves a redirect
-	          	.failureUrl(AUTHENTICATION_FALURE_URL); // see AbstractAuthenticationProcessingFilter
-		
-
+	          	.failureUrl(AUTHENTICATION_FALURE_URL); // see AbstractAuthenticationProcessingFilter	
 		          
 	}
 	

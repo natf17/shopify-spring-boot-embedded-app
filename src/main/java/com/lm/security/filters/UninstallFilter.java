@@ -37,8 +37,6 @@ public class UninstallFilter implements Filter {
 		
 		String registrationId = matches(req);
 		
-		
-		
 		if(registrationId == null) {
 			chain.doFilter(req, response);
 			return;

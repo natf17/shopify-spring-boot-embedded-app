@@ -20,7 +20,6 @@ public class ShopifyVerificationStrategyTest {
 	
 	private HttpServletRequest req;
 	
-	//private ShopifyVerificationStrategy strategy = new ShopifyVerificationStrategy(null,null);
 	private String secret = "6a031b0bd6af4eb";
 	
 	@Before
@@ -207,5 +206,63 @@ public class ShopifyVerificationStrategyTest {
 		
 	}
 	
+	@Test
+	public void givenInvalidBodyThenIsHeaderShopifyRequestMustFail() {
+		ShopifyVerificationStrategy strategy = new ShopifyVerificationStrategy(null, null);
+		String body = "{\"id\":689034}";
+		
+		String hmac = strategy.hash(this.secret, body);
+
+		Assert.assertFalse(strategy.isShopifyHeaderRequest(body + "ds", hmac, secret));
+	}
+	
+	@Test
+	public void givenValidBodyThenIsHeaderShopifyRequestMustPass() {
+		ShopifyVerificationStrategy strategy = new ShopifyVerificationStrategy(null, null);
+		String body = "{\"id\":689034}";
+		
+		String hmac = strategy.hash(this.secret, body);
+
+		Assert.assertFalse(strategy.isShopifyHeaderRequest(body, hmac, this.secret));
+	}
+	
+	@Test
+	public void givenValidRequestThenIsHeaderShopifyRequestIsTrue() {
+		ShopifyVerificationStrategy strategy = spy(new ShopifyVerificationStrategy(null, null));
+		
+		String body = "{\"id\":689034}";
+		String secret = "dfdfbjhew";
+		
+		String hmac = strategy.hash(secret, body);
+		
+		HttpServletRequest request = mock(HttpServletRequest.class);
+		
+		when(request.getAttribute("X-Shopify-Hmac-SHA256")).thenReturn(hmac);
+		doReturn(body).when(strategy).getBody(any());
+		doReturn(secret).when(strategy).getClientSecretByRegistrationId(any());
+		
+		strategy.isHeaderShopifyRequest(request, "registrationId");
+	}
+	
+	
+	@Test
+	public void givenInvalidRequestThenIsHeaderShopifyRequestIsTrue() {
+		
+		ShopifyVerificationStrategy strategy = spy(new ShopifyVerificationStrategy(null, null));
+		
+		String body = "{\"id\":689034}" + "sad";
+		String secret = "dfdfbjhew";
+		
+		String hmac = strategy.hash(secret, body);
+		
+		HttpServletRequest request = mock(HttpServletRequest.class);
+		
+		when(request.getAttribute("X-Shopify-Hmac-SHA256")).thenReturn(hmac);
+		doReturn(body).when(strategy).getBody(any());
+		doReturn(secret).when(strategy).getClientSecretByRegistrationId(any());
+		
+		strategy.isHeaderShopifyRequest(request, "registrationId");
+		
+	}
 
 }

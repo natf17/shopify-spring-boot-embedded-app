@@ -105,7 +105,7 @@ public class ShopifyVerificationStrategy {
 		
 	}
 	
-	private boolean isShopifyHeaderRequest(String body, String hmac, String secret) {
+	public boolean isShopifyHeaderRequest(String body, String hmac, String secret) {
 		
 		String hashValue = this.hash(secret, hmac);
 		
