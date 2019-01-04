@@ -1,10 +1,52 @@
-# The How
+# Getting started
+***************************************
+
+How can we use Shopify's default OAuth offline access token in a Spring Boot app, leveraging the power of Spring Security? This working implementation only requires a few lines in the application.properties file for it to work. It is a server that authenticates with Shopify and, upon successful authentication, keeps the OAuth token in a session object, which can be used in a variety of ways, such as a single page web application.
+
+We assume you know your way around the Shopify developer site to create apps and development stores. Once you have a development store, create a private app.
+
+1. Copy the API key and API key secret from the Shopify site.
+2. Store them, along with the desired scope, in the application.properties:
+
+```
+shopify.client.client_id={your key}
+shopify.client.client_secret={your key secret}
+shopify.client.scope={scope1,scope2,...}
+```
+3. Choose the salt and password that the Spring encryptors will use to encrypt the token and add them to your application.properties:
+
+```
+lm.security.cipher.password={your password}
+lm.security.cipher.salt={your salt}
+```
+
+4. Whether you're using ngrok, or your own server, make sure you use HTTPS to comply with Shopify's security requirements. 
+
+5. Add the following information to your app on Shopify:
+	- App url: https://{hostname}/install/shopify
+	- Whitelisted redirection urls: https://{hostname}/login/app/oauth2/code/shopify
+
+6. That's it!
+
+Try out the following URIs:
+- `/install/shopify?shop={your store}`: to log in
+- `/init`: to log in by entering your store in a form
+- `/products`: a secure endpoint
+- `/logout`: to log out
+
+You can change the defaults in the `SecurityConfig` class in the `com.lm.security.configuration` package.
+
+
 
 Note: This Spring Security application requires the Java Cryptography Encryption policy files for encryption.
 
 See https://www.oracle.com/technetwork/java/javase/downloads/jce-all-download-5170447.html
 
 ***************************************
+
+# Under the hood
+***************************************
+
 
 ### `ShopifyOriginFilter`
 - This filter makes sure the request possesses the necessary information to verify the request came from Shopify.
@@ -115,6 +157,7 @@ The default `OAuth2LoginAuthenticationProvider`...
 - Invoked by `ShopifyOriginFilter`
 - A request came from Shopify if it has a valid HMAC parameter
 - But for the "whitelisted redirection url", it is also necessary that it provide a nonce in the "state" parameter. Since this is a redirection url, the `OAuth2AuthorizationRequest` should have already been saved in the HttpSession. See `ShopifyHttpSessionOAuth2AuthorizationRequestRepository`
+- This class also provides the logic to verify that an uninstall request came from Shopify by inspecting certain request headers. 
 
 ### `BehindHttpsProxyFilter`
 - Invoked before the OAuth2LoginAuthenticationFilter
@@ -122,10 +165,7 @@ The default `OAuth2LoginAuthenticationProvider`...
 - This filter wraps the redirectionPath (/login/app/oauth2/code/...) and loginPath (/install/...) in a HttpServletRequestWrapper that overrides the scheme to "https" and server port to 443
 
 
-## Logging out
-Coming soon
-logout url: /logout
-log out success url: /logout
-
 ## Uninstalling
-Coming soon
+### `UninstallFilter`
+- Invoked when the request matches the default uninstallation uri: /store/uninstall/shopify
+- Delegates to `ShopifyVerificationStrategy` to make sure the request came from Shopify before removing the store and all associated information from the database
