@@ -9,6 +9,7 @@ public interface TokenRepository {
 	OAuth2AccessTokenWithSalt findTokenForRequest(String shop);
 	void saveNewStore(String shop, Set<String>scopes, EncryptedTokenAndSalt encryptedTokenAndSalt);
 	void updateKey(String shop, EncryptedTokenAndSalt encryptedTokenAndSalt);
+	void uninstallStore(String storeName);
 	
 	static class OAuth2AccessTokenWithSalt {
 		private final OAuth2AccessToken access_token;

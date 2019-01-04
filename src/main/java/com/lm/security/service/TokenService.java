@@ -3,7 +3,6 @@ package com.lm.security.service;
 import java.util.Set;
 
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.encrypt.Encryptors;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
@@ -13,7 +12,6 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
-import org.springframework.stereotype.Service;
 
 import com.lm.security.authentication.CipherPassword;
 import com.lm.security.configuration.SecurityBeansConfig;
@@ -36,20 +34,6 @@ public class TokenService {
 		this.clientRepository = clientRepository;
 
 	}
-	/*
-	public void setTokenRepository(TokenRepository tokenRepository) {
-		this.tokenRepository = tokenRepository;
-	}
-	
-	
-	public void setCipherPassword(CipherPassword cipherPassword) {
-		this.cipherPassword = cipherPassword;
-	}
-	
-	
-	public void setClientRepository(ClientRegistrationRepository clientRepository) {
-		this.clientRepository = clientRepository;
-	}*/
 	
 	public void saveNewStore(OAuth2AuthorizedClient authorizedClient, Authentication principal) {
 		
@@ -58,10 +42,8 @@ public class TokenService {
 		Set<String> scopes = authorizedClient.getAccessToken().getScopes();
 		
 		EncryptedTokenAndSalt encryptedTokenAndSalt = getTokenAndSalt(authorizedClient);
-		
-		
-		this.tokenRepository.saveNewStore(shop, scopes, encryptedTokenAndSalt);
-		
+
+		this.tokenRepository.saveNewStore(shop, scopes, encryptedTokenAndSalt);	
 		
 	}
 
@@ -89,16 +71,20 @@ public class TokenService {
 		
 	}
 	
-
+	
 	
 	public void updateStore(OAuth2AuthorizedClient authorizedClient, Authentication principal) {
 		
 		String shop = getStoreName(principal);
-
+		
 		EncryptedTokenAndSalt encryptedTokenAndSalt = getTokenAndSalt(authorizedClient);
 		
 		this.tokenRepository.updateKey(shop, encryptedTokenAndSalt);
 
+	}
+	
+	public void uninstallStore(String store) {
+		this.tokenRepository.uninstallStore(store);
 	}
 	
 	
@@ -144,6 +130,7 @@ public class TokenService {
 		
 		
 	}
+	
 
 }
 

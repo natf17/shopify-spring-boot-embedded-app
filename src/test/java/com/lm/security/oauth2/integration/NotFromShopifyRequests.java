@@ -44,7 +44,7 @@ public class NotFromShopifyRequests {
 		this.mockMvc.perform(get(INSTALL_PATH))
 					.andExpect(redirectedUrlPattern("**" + LOGIN_ENDPOINT));							
 	}
-	
+	/*
 	
 	/*
 	 * Should provide redirection urls for JS if the request doesn't come from Shopify but a shop parameter is included
@@ -53,8 +53,8 @@ public class NotFromShopifyRequests {
 	public void whenShopParamPresentThenJSRedirect() throws Exception {
 	
 		this.mockMvc.perform(get(INSTALL_PATH + "?shop=test.myshopify.com"))
-					.andExpect(content().string(containsString("var redirectFromParentPath = 'https://test.myshopify.com/admin/oauth/authorize?client_id=testId&redirect_uri=http://localhost/login/app/oauth2/code/shopify&scope=read_inventory,write_inventory,read_products,write_products&state=")))
-					.andExpect(content().string(containsString("var redirectFromIFramePath = '/oauth/authorize?client_id=testId&redirect_uri=http://localhost/login/app/oauth2/code/shopify&scope=read_inventory,write_inventory,read_products,write_products&state=")));
+					.andExpect(content().string(containsString("var redirectFromParentPath = 'https://test.myshopify.com/admin/oauth/authorize?client_id=testId&redirect_uri=https://localhost/login/app/oauth2/code/shopify&scope=read_inventory,write_inventory,read_products,write_products&state=")))
+					.andExpect(content().string(containsString("var redirectFromIFramePath = '/oauth/authorize?client_id=testId&redirect_uri=https://localhost/login/app/oauth2/code/shopify&scope=read_inventory,write_inventory,read_products,write_products&state=")));
 	}
 	
 	/*

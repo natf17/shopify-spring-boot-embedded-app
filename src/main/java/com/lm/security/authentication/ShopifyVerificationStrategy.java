@@ -1,6 +1,9 @@
 package com.lm.security.authentication;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -10,6 +13,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.io.IOUtils;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
@@ -22,6 +26,8 @@ import com.lm.security.web.ShopifyHttpSessionOAuth2AuthorizationRequestRepositor
 public class ShopifyVerificationStrategy {
 	public static final String NONCE_PARAMETER = OAuth2ParameterNames.STATE;
 	public static final String HMAC_PARAMETER = "hmac";
+	public static final String HMAC_HEADER = "X-Shopify-Hmac-SHA256";
+
 	
 	private ShopifyHttpSessionOAuth2AuthorizationRequestRepository authReqRepository;
 	private ClientRegistrationRepository clientRegistrationRepository;
@@ -30,6 +36,7 @@ public class ShopifyVerificationStrategy {
 	public ShopifyVerificationStrategy(ClientRegistrationRepository clientRegistrationRepository, ShopifyHttpSessionOAuth2AuthorizationRequestRepository authReqRepository) {
 		this.clientRegistrationRepository = clientRegistrationRepository;
 		this.authReqRepository = authReqRepository;
+
 	}
 	
 	/*
@@ -57,10 +64,10 @@ public class ShopifyVerificationStrategy {
 		
 		String secret = getClientSecret(request);
 		
-		if(!isShopifyRequest(request.getQueryString(), hmacValue, secret)) {
+		if(!isShopifyQueryRequest(request.getQueryString(), hmacValue, secret)) {
 			// try again...
 			// sometimes the query string has been url encoded (by the server...?)
-			return isShopifyRequest(UriUtils.decode(request.getQueryString(), StandardCharsets.UTF_8), hmacValue, secret);
+			return isShopifyQueryRequest(UriUtils.decode(request.getQueryString(), StandardCharsets.UTF_8), hmacValue, secret);
 
 		}
 		
@@ -71,7 +78,7 @@ public class ShopifyVerificationStrategy {
 		
 	}
 	
-	private boolean isShopifyRequest(String rawQueryString, String hmac, String secret) {
+	private boolean isShopifyQueryRequest(String rawQueryString, String hmac, String secret) {
 
 		String hmacQueryStringPiece = HMAC_PARAMETER + "=" + hmac + "&";
 
@@ -96,6 +103,18 @@ public class ShopifyVerificationStrategy {
 
 		return false;
 		
+	}
+	
+	public boolean isShopifyHeaderRequest(String body, String hmac, String secret) {
+		
+		String hashValue = this.hash(secret, hmac);
+		
+		// From Shopify:
+		// "Each webhook request includes a base64-encoded X-Shopify-Hmac-SHA256 header"
+		
+		String encodedValue = Base64.getEncoder().encodeToString(hashValue.getBytes());
+		
+		return encodedValue.equals(hmac);
 	}
 	
 	/*
@@ -150,6 +169,7 @@ public class ShopifyVerificationStrategy {
 		Map.Entry<String, OAuth2AuthorizationRequest> authReq = authReqRepository.getFirstAuthorizationRequest(req);
 		String clientId = null;
 		ClientRegistration reg = null;
+		String clientSecret = null;
 		
 		// Prefer obtaining the ClientRegistration using the clientId saved in the OAuth2AuthorizationRequest
 		// But in embedded app, this is the first time a request is made, so no
@@ -157,11 +177,10 @@ public class ShopifyVerificationStrategy {
 		if(authReq == null) {
 			String registrationId = authReqRepository.extractRegistrationId(req);
 			if(registrationId == null) {
-				throw new RuntimeException("No OAuth2AuthorizationRequest found!");
+				throw new RuntimeException("No registrationId found!");
 			}
 			
-			reg = clientRegistrationRepository.findByRegistrationId(registrationId);
-			
+			clientSecret = getClientSecretByRegistrationId(registrationId);
 			
 		} else {
 			clientId = authReq.getValue().getClientId();
@@ -175,18 +194,31 @@ public class ShopifyVerificationStrategy {
 					break;
 				}
 			}
+			
+			if(reg == null) {
+				throw new RuntimeException("No ClientRegistration found for " + clientId);
+			}
+			
+			clientSecret = reg.getClientSecret();
+
 		}
 		
-
+		if(clientSecret == null) {
+			throw new RuntimeException("No client secret found");
+		}
 		
+		return clientSecret;
 		
+	}
+	
+	public String getClientSecretByRegistrationId(String registrationId) {
+		ClientRegistration reg = clientRegistrationRepository.findByRegistrationId(registrationId);
 		
 		if(reg == null) {
-			throw new RuntimeException("No ClientRegistration found for " + clientId);
+			return null;
 		}
 		
 		return reg.getClientSecret();
-		
 	}
 	
 	public Map<String,String[]> getRequestParameters(HttpServletRequest req) {
@@ -211,6 +243,34 @@ public class ShopifyVerificationStrategy {
 		}
 		
 		return hash;
+	}
+	
+	public String getBody(HttpServletRequest req) {
+		InputStream in = null;
+		 
+		String body = null;
+		try {
+			in = req.getInputStream();
+			IOUtils.toString(in, "UTF-8");
+		} catch(IOException ex) {
+			throw new RuntimeException("There was an error parsing the request body");
+		}
+		
+		return body;
+	}
+	
+	public boolean isHeaderShopifyRequest(HttpServletRequest request, String registrationId) {
+		String hmacValue = request.getHeader(HMAC_HEADER);
+		
+		if(hmacValue == null || hmacValue.isEmpty()) {
+			return false;
+		}
+		
+		String secret = getClientSecretByRegistrationId(registrationId);
+		
+		String body = getBody(request);
+
+		return isShopifyHeaderRequest(body, hmacValue, secret);
 	}
 	
 

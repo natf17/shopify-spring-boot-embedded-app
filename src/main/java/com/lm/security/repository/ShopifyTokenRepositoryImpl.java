@@ -22,7 +22,7 @@ public class ShopifyTokenRepositoryImpl implements TokenRepository {
 	private static String SELECT_INFO_FOR_SHOP = "SELECT access_token, salt, scope FROM StoreAccessTokens WHERE shop=?";
 	private static final String SAVE_ACCESS_TOKEN_CREDENTIALS = "INSERT INTO StoreAccessTokens(shop,access_token,salt,scope) VALUES(?,?,?,?)";
 	private static final String UPDATE_TOKEN_FOR_SHOP = "UPDATE StoreAccessTokens SET access_token=?, salt=? WHERE shop=?";
-	
+	private static final String REMOVE_SHOP = "DELETE FROM StoreAccessTokens WHERE shop=?";
 	private JdbcTemplate jdbc;
 	
 	@Autowired
@@ -77,6 +77,11 @@ public class ShopifyTokenRepositoryImpl implements TokenRepository {
 	@Override
 	public void updateKey(String shop, EncryptedTokenAndSalt encryptedTokenAndSalt) {
 		jdbc.update(UPDATE_TOKEN_FOR_SHOP, encryptedTokenAndSalt.getEncryptedToken(), encryptedTokenAndSalt.getSalt(), shop);		
+	}
+
+	@Override
+	public void uninstallStore(String storeName) {
+		jdbc.update(REMOVE_SHOP, storeName);
 	}
 	
 	

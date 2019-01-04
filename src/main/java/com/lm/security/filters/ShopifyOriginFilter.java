@@ -13,6 +13,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -37,6 +38,12 @@ import com.lm.security.authentication.ShopifyVerificationStrategy;
  * 
  * If not, the ShopifyOriginToken is not set.
  * 
+ * Also, since the installation path is expected to be passed in as a second argument to the constructor
+ * of this filter, if the request is not already authenticated, and it comes from Shopify, a session attribute is
+ * set to note that this is an embedded app:
+ * 
+ * 
+ * session.addAttribute("SHOPIFY_EMBEDDED_APP", true);
  * 
  */
 public class ShopifyOriginFilter implements Filter {
@@ -45,7 +52,7 @@ public class ShopifyOriginFilter implements Filter {
 	private List<AntPathRequestMatcher> applicablePaths;
 	private ShopifyVerificationStrategy shopifyVerificationStrategy;
 	private AccessDeniedHandler accessDeniedHandler = new AccessDeniedHandlerImpl();
-	
+	private String SHOPIFY_EMBEDDED_APP = "SHOPIFY_EMBEDDED_APP";
 	
 	public ShopifyOriginFilter(ShopifyVerificationStrategy shopifyVerificationStrategy, String authorizationPath, String... matchedPaths) {
 		this.mustComeFromShopifyMatcher = new AntPathRequestMatcher(authorizationPath);
@@ -98,6 +105,8 @@ public class ShopifyOriginFilter implements Filter {
 
 				if(!isAlreadyAuthenticated) {
 					SecurityContextHolder.getContext().setAuthentication(new ShopifyOriginToken(true));
+					setEmbeddedApp((HttpServletRequest)request);
+
 				}
 			}
 
@@ -147,6 +156,13 @@ public class ShopifyOriginFilter implements Filter {
 		
 		return match;
 		
+	}
+	
+	private void setEmbeddedApp(HttpServletRequest req) {
+		HttpSession session = req.getSession(false);
+		if(session != null) {
+			session.setAttribute(SHOPIFY_EMBEDDED_APP, true);
+		}
 	}
 	
 }
