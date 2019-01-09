@@ -16,7 +16,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.filter.GenericFilterBean;
 
-import com.lm.security.authentication.AuthenticationRedirectUriHolder;
 import com.lm.security.authentication.ShopifyOriginToken;
 import com.lm.security.configuration.SecurityBeansConfig;
 import com.lm.security.service.TokenService;
@@ -51,7 +50,6 @@ public class ShopifyExistingTokenFilter extends GenericFilterBean {
 		
 		if(!requestMatcher.matches(req)) {
 			chain.doFilter(request, response);
-			removeTemporaryAuthentication();
 
 			return;
 
@@ -63,22 +61,32 @@ public class ShopifyExistingTokenFilter extends GenericFilterBean {
 		OAuth2AuthenticationToken oauth2Token = null;
 		
 		if(auth != null && auth instanceof ShopifyOriginToken) {
-
+System.out.println("ShopifyOriginToken found");
 			originToken = (ShopifyOriginToken)auth;
 			
 			if(originToken.isFromShopify()) {
 
 				oauth2Token = this.getToken(req);
 				if(oauth2Token != null) {
+					System.out.println("Setting token");
+
 					this.setToken(oauth2Token);
 				}
 				
 			}
+			
+			// if ShopifyOriginToken is still in the SecurityContextHolder, remove it
+			if(SecurityContextHolder.getContext().getAuthentication() instanceof ShopifyOriginToken) {
+				SecurityContextHolder.getContext().setAuthentication(null);
+			}
+			
+			
 		}
 		
+		System.out.println("ShopifyExistingTokenFilter");
+
 		chain.doFilter(request, response);
 		
-		removeTemporaryAuthentication();
 		
 	}
 	
@@ -113,14 +121,6 @@ public class ShopifyExistingTokenFilter extends GenericFilterBean {
 		return oauth2Authentication;
 	}
 	
-	private void removeTemporaryAuthentication() {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		
-		
-		if(auth != null && AuthenticationRedirectUriHolder.class.isAssignableFrom(auth.getClass())) {
-			SecurityContextHolder.getContext().setAuthentication(null);
-		}
-	}
 	
 	private OAuth2User transformAuthorizedClientToUser(OAuth2AuthorizedClient client) {
 		return new ShopifyStore(client.getPrincipalName(),

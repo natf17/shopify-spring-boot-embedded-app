@@ -36,6 +36,7 @@ import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationExchange;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationResponse;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -48,6 +49,7 @@ import com.lm.security.oauth2.integration.config.TestConfig;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes= {ShopifyEmbeddedAppSpringBootApplication.class, TestConfig.class, DisabledShopifyVerfificationConfig.class})
+@TestPropertySource(locations="classpath:test-application.properties")
 @AutoConfigureMockMvc
 public class Step2_AuthorizationGrant {
 
@@ -88,9 +90,11 @@ public class Step2_AuthorizationGrant {
 		MvcResult mR = this.mockMvc.perform(get("/install/shopify?shop=" + SHOP + "&timestamp=dsd&hmac=sdfasrf4324")).andReturn();
 
 		HttpSession rSession = mR.getRequest().getSession();
+		System.out.println(rSession);
+		System.out.println(rSession.getAttributeNames().nextElement());
 		
 		oAuth2AuthorizationRequests = (Map<String, OAuth2AuthorizationRequest>) rSession.getAttribute(SESSION_ATTRIBUTE_NAME);
-
+		System.out.println(oAuth2AuthorizationRequests);
 	}
 	
 

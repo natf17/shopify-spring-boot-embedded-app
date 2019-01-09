@@ -60,7 +60,6 @@ public class Step1_AuthorizationRequest {
 					.andExpect(status().is2xxSuccessful())
 					.andExpect(handler().methodName("installAndHome"));
 	}
-	
 
 	@Test
 	public void whenStoreDoesNotExistThenRedirectToShopify() throws Exception {
@@ -69,7 +68,7 @@ public class Step1_AuthorizationRequest {
 					.andExpect(content().string(containsString("var redirectFromParentPath = 'https://newstoretest.myshopify.com/admin/oauth/authorize?client_id=testId&redirect_uri=https://localhost/login/app/oauth2/code/shopify&scope=read_inventory,write_inventory,read_products,write_products&state=")))
 					.andExpect(content().string(containsString("var redirectFromIFramePath = '/oauth/authorize?client_id=testId&redirect_uri=https://localhost/login/app/oauth2/code/shopify&scope=read_inventory,write_inventory,read_products,write_products&state=")));
 	}
-	
+
 	
 	
 	

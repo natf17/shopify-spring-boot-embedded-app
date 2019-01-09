@@ -3,6 +3,7 @@ package com.lm.security.oauth2.integration;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -39,12 +40,13 @@ public class NotFromShopifyRequests {
 	 * Should redirect if the request doesn't come from Shopify and no shop parameter is included
 	 */
 	@Test
-	public void whenShopParamPresentThenRedirectToShopify() throws Exception {
-	
+	public void whenShopParamNotPresentThenRedirectToShopify() throws Exception {
+
 		this.mockMvc.perform(get(INSTALL_PATH))
-					.andExpect(redirectedUrlPattern("**" + LOGIN_ENDPOINT));							
+					.andExpect(redirectedUrlPattern("/**" + LOGIN_ENDPOINT));
+		
 	}
-	/*
+
 	
 	/*
 	 * Should provide redirection urls for JS if the request doesn't come from Shopify but a shop parameter is included

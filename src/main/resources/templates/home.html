@@ -9,8 +9,8 @@
   
   /*<![CDATA[*/
 		
-  		var redirectFromParentPath = '[(${#authentication.principal.parentRedirectUri})]';
-		var redirectFromIFramePath = '[(${#authentication.principal.iFrameRedirectUri})]';
+  		var redirectFromParentPath = '[(${#request.getAttribute("PARENT_AUTHENTICATION_URI")})]';
+		var redirectFromIFramePath = '[(${#request.getAttribute("I_FRAME_AUTHENTICATION_URI")})]';
 		
 		
 		  

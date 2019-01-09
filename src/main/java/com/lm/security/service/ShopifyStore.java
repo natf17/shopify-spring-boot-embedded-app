@@ -1,5 +1,6 @@
 package com.lm.security.service;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -8,11 +9,14 @@ import java.util.Map;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-import com.lm.security.authentication.AuthenticationRedirectUriHolder;
-
 // stores the Access Token as an attribute
 
-public class ShopifyStore extends AuthenticationRedirectUriHolder.RedirectUris implements OAuth2User {
+public class ShopifyStore  implements OAuth2User, Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -912952033860273123L;
+
 	public static final String ACCESS_TOKEN_KEY = "shopify_access_token";
 
 	private final String name;
@@ -27,7 +31,6 @@ public class ShopifyStore extends AuthenticationRedirectUriHolder.RedirectUris i
 	}
 	
 	public ShopifyStore(String name, Collection<? extends GrantedAuthority> authorities, Map<String, Object> attributes) {
-		super(null, null);
 		this.name = name;
 		this.authorities =  authorities != null ? authorities : new ArrayList<>();
 		this.attributes =  attributes != null ? attributes : new HashMap<>();

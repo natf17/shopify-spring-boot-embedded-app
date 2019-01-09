@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.keygen.Base64StringKeyGenerator;
@@ -35,16 +36,18 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 	private final StringKeyGenerator stateGenerator = new Base64StringKeyGenerator(Base64.getUrlEncoder());
 	private final ShopifyRedirectStrategy authorizationRedirectStrategy = new ShopifyRedirectStrategy();
 	private final ShopifyHttpSessionOAuth2AuthorizationRequestRepository customAuthorizationRequestRepository;
+	private final String loginUri;
 
 	
 	public ShopifyOAuth2AuthorizationRequestResolver(ClientRegistrationRepository clientRegistrationRepository, 
 							ShopifyHttpSessionOAuth2AuthorizationRequestRepository customAuthorizationRequestRepository,
-							String authorizationRequestBaseUri) {
+							String authorizationRequestBaseUri, String loginUri) {
 
 		this.clientRegistrationRepository = clientRegistrationRepository;
 		this.customAuthorizationRequestRepository = customAuthorizationRequestRepository;
 		this.authorizationRequestMatcher = new AntPathRequestMatcher(
 				authorizationRequestBaseUri + "/{registrationId}");
+		this.loginUri = loginUri;
 	}
 	
 
@@ -59,17 +62,6 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 			return null;
 		}
 
-		// At this point, either the request came from Shopify, or make sure shop param was provided
-		String shopName = null;
-		
-		shopName = this.getShopName(request);
-		
-		if(shopName == null || shopName.isEmpty()) {
-			// shop name is required
-			// an AnonymousAuthenticationToken will be set by
-			// its corresponding filter, triggering a redirect
-			return null;
-		}
 		
 		// extract the registrationId (ex: "shopify")
 		String registrationId;
@@ -78,12 +70,18 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 			registrationId = this.authorizationRequestMatcher
 					.extractUriTemplateVariables(request).get("registrationId");
 		} else {
-			registrationId = null;
+			return null;
 		}
 
-		if(registrationId == null) {
-
-			return null;
+		// At this point, either the request came from Shopify, or make sure shop param was provided
+		String shopName = null;
+				
+		shopName = this.getShopName(request);
+				
+		if(shopName == null || shopName.isEmpty() || registrationId == null) {
+			// shop name is required, or registrationId
+			// trigger a redirect
+			return redirectToLogin();
 		}
 		
 		// obtain a ClientRegistration for extracted registrationId
@@ -121,7 +119,7 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 		// Save the OAuth2AuthorizationRequest
 		customAuthorizationRequestRepository.saveAuthorizationRequest(authorizationRequest, request);
 		
-				
+		System.out.println("HAHAHA");
 		// DO NOT redirect, build redirecturi: DefaultRedirectStrategy		
 		authorizationRedirectStrategy.saveRedirectAuthenticationUris(request, authorizationRequest);
 		
@@ -192,6 +190,29 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 		}
 		
 		return false;
+	}
+	
+	// return an OAuth2AuthorizationRequest so OAuth2AuthorizationRequestRedirectFilter
+	// will redirect
+	private OAuth2AuthorizationRequest redirectToLogin() {
+		// clear all authentication
+		if(SecurityContextHolder.getContext().getAuthentication() != null) {
+			SecurityContextHolder.getContext().setAuthentication(null);
+		}
+		
+		
+		// The grant type cannot be AUTHORIZATION_CODE, since we don't want the 
+		// OAuth2AuthorizationRequest saved in the session just yet
+		OAuth2AuthorizationRequest request = OAuth2AuthorizationRequest.implicit()
+				.authorizationUri("REDIRECT")
+				.authorizationRequestUri(this.loginUri) // the redirect uri
+				.clientId("REDIRECT")
+				.redirectUri("REDIRECT")
+				.build();
+
+		return request;
+				
+				
 	}
 	
 
