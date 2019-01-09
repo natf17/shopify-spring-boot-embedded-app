@@ -23,6 +23,7 @@
   You are already logged in.
   
 	<form th:if="${session.SHOPIFY_EMBEDDED_APP} != true" name="logout" action="/logout" method="POST">
+	<input type="hidden"  name="${_csrf.parameterName}"   value="${_csrf.token}"/>
 	<button type="submit">Log out</button>
 	</form>
   </div>
