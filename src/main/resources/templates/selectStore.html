@@ -22,7 +22,7 @@
   <div sec:authorize="isAuthenticated()">
   You are already logged in.
   
-	<form th:if="${session.SHOPIFY_EMBEDDED_APP} != true" name="logout" action="/logout">
+	<form th:if="${session.SHOPIFY_EMBEDDED_APP} != true" name="logout" action="/logout" method="POST">
 	<button type="submit">Log out</button>
 	</form>
   </div>
