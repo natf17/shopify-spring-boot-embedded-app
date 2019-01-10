@@ -107,7 +107,7 @@ System.out.println("ShopifyOriginToken found");
 		OAuth2AuthorizedClient client = tokenService.getStore(shopName);
 		
 		if(client == null) {
-			// this store "has not been installed"
+			// this store "has not been installed", or salt and passwords are outdated
 			return null;
 		}
 

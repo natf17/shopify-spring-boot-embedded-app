@@ -46,7 +46,19 @@ public class TokenService {
 		this.tokenRepository.saveNewStore(shop, scopes, encryptedTokenAndSalt);	
 		
 	}
+	
+	// returns true if a store with this name exists, regardless of validity of stored credentials
+	public boolean doesStoreExist(String shop) {
+		OAuth2AccessTokenWithSalt token = this.tokenRepository.findTokenForRequest(shop);
+		
+		if(token != null) {
+			return true;
+		}
+		
+		return false;
+	}
 
+	// will return an existing, valid store
 	public OAuth2AuthorizedClient getStore(String shopName) {
 		
 		OAuth2AccessTokenWithSalt ets = this.tokenRepository.findTokenForRequest(shopName);
@@ -56,6 +68,11 @@ public class TokenService {
 		}
 		
 		OAuth2AccessToken rawToken = getRawToken(ets);
+		
+		if(rawToken == null) {
+			// the salt and encrypted passwords are out of date
+			return null;
+		}
 		
 		ClientRegistration cr = clientRepository.findByRegistrationId(SecurityBeansConfig.SHOPIFY_REGISTRATION_ID);
 		
@@ -70,6 +87,8 @@ public class TokenService {
 				null);
 		
 	}
+	
+	
 	
 	
 	
@@ -123,9 +142,14 @@ public class TokenService {
 	
 	private String decryptToken(EncryptedTokenAndSalt enC) {
 		TextEncryptor textEncryptor = Encryptors.queryableText(cipherPassword.getPassword(), enC.getSalt());
-
-		String decryptedToken = textEncryptor.decrypt(enC.getEncryptedToken());
 		
+		String decryptedToken = null;
+		try {
+			decryptedToken = textEncryptor.decrypt(enC.getEncryptedToken());
+		} catch(Exception e) {
+			// the cipher password changed...
+			
+		}
 		return decryptedToken;
 		
 		
