@@ -75,7 +75,7 @@ public class SecurityBeansConfig {
 	
 	@Bean
 	public OAuth2AuthorizationRequestResolver shopifyOauth2AuthorizationRequestResolver(ClientRegistrationRepository clientRegistrationRepository) {
-		return new ShopifyOAuth2AuthorizationRequestResolver(clientRegistrationRepository, customAuthorizationRequestRepository(), SecurityConfig.INSTALL_PATH);
+		return new ShopifyOAuth2AuthorizationRequestResolver(clientRegistrationRepository, customAuthorizationRequestRepository(), SecurityConfig.INSTALL_PATH, SecurityConfig.LOGIN_ENDPOINT);
 	}
 	
 	@Bean

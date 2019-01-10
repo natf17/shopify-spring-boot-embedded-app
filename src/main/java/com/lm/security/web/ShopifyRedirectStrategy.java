@@ -5,14 +5,12 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.web.DefaultRedirectStrategy;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.lm.security.authentication.AuthenticationRedirectUriHolder;
 
 public class ShopifyRedirectStrategy extends DefaultRedirectStrategy {
 	public final String I_FRAME_REDIRECT_URI = "/oauth/authorize";
@@ -20,6 +18,9 @@ public class ShopifyRedirectStrategy extends DefaultRedirectStrategy {
 	private final String SCOPE = OAuth2ParameterNames.SCOPE;
 	private final String REDIRECT_URI = OAuth2ParameterNames.REDIRECT_URI;
 	private final String CLIENT_ID = OAuth2ParameterNames.CLIENT_ID;
+	private final String I_FRAME_AUTHENTICATION_URI_KEY = "I_FRAME_AUTHENTICATION_URI";
+	private final String PARENT_AUTHENTICATION_URI_KEY = "PARENT_AUTHENTICATION_URI";
+	
 
 	public void saveRedirectAuthenticationUris(HttpServletRequest request, OAuth2AuthorizationRequest authorizationRequest) {
 		
@@ -27,12 +28,16 @@ public class ShopifyRedirectStrategy extends DefaultRedirectStrategy {
 		String authorizationUri = authorizationRequest.getAuthorizationUri();
 
 		String parentFrameRedirectUrl = super.calculateRedirectUrl(request.getContextPath(), authorizationUri);
-
+		
+		request.setAttribute(I_FRAME_AUTHENTICATION_URI_KEY, addRedirectParams(I_FRAME_REDIRECT_URI, authorizationRequest));
+		request.setAttribute(PARENT_AUTHENTICATION_URI_KEY, addRedirectParams(parentFrameRedirectUrl, authorizationRequest));
+		
+/*
 		SecurityContextHolder.getContext().setAuthentication(new AuthenticationRedirectUriHolder(
 																addRedirectParams(parentFrameRedirectUrl, authorizationRequest), 
 																addRedirectParams(I_FRAME_REDIRECT_URI, authorizationRequest)
 																));
-		
+		*/
 	}
 	
 	

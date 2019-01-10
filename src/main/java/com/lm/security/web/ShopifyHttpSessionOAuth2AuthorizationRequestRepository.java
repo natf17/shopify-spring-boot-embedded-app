@@ -34,6 +34,7 @@ public class ShopifyHttpSessionOAuth2AuthorizationRequestRepository {
 		}		
 		
 		authorizationRequests.put(state, authorizationRequest);
+		System.out.println("REQUEST SAVED");
 		request.getSession().setAttribute(DEFAULT_AUTHORIZATION_REQUEST_ATTR_NAME, authorizationRequests);
 
 	}

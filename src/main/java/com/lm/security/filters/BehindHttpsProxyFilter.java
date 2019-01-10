@@ -46,6 +46,8 @@ public class BehindHttpsProxyFilter implements Filter {
 		
 		HttpServletRequest req = (HttpServletRequest)request;
 		
+		System.out.println(req.getRequestURI());
+		
 		if(!redirectionPath.matches(req) && !loginPath.matches(req)) {
 
 			chain.doFilter(request, response);

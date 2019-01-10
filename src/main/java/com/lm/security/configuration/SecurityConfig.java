@@ -71,6 +71,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 			  .and()
 	          .authorizeRequests()
 	          	.mvcMatchers(LOGIN_ENDPOINT).permitAll()
+	          	.mvcMatchers(ANY_INSTALL_PATH).permitAll()
 	          	.mvcMatchers("/favicon.ico").permitAll()
 	          	.anyRequest().authenticated()
 	          .and()
