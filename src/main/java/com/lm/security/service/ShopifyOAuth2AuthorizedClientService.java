@@ -41,10 +41,11 @@ public class ShopifyOAuth2AuthorizedClientService implements OAuth2AuthorizedCli
 	public void saveAuthorizedClient(OAuth2AuthorizedClient authorizedClient, Authentication principal) {
 		
 		String shop = ((OAuth2AuthenticationToken)principal).getPrincipal().getName();
+		boolean doesStoreExist = tokenService.doesStoreExist(shop);
 
-		OAuth2AuthorizedClient existingStore = loadAuthorizedClient(authorizedClient.getClientRegistration().getRegistrationId(), shop);
+		//OAuth2AuthorizedClient existingStore = loadAuthorizedClient(authorizedClient.getClientRegistration().getRegistrationId(), shop);
 
-		if(existingStore != null) {
+		if(doesStoreExist) {
 			tokenService.updateStore(authorizedClient, principal);
 		} else {
 			tokenService.saveNewStore(authorizedClient, principal);
