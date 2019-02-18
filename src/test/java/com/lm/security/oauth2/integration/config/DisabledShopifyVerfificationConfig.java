@@ -3,10 +3,12 @@ package com.lm.security.oauth2.integration.config;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 import com.lm.security.authentication.ShopifyVerificationStrategy;
 
+@Configuration
 public class DisabledShopifyVerfificationConfig {
 	@Bean
 	@Primary
@@ -30,6 +32,12 @@ public class DisabledShopifyVerfificationConfig {
 		public boolean hasValidNonce(HttpServletRequest request) {
 			return true;
 		}
+		
+		@Override
+		public boolean isHeaderShopifyRequest(HttpServletRequest request, String registrationId) {
+			return true;
+		}
+		
 		
 	}
 

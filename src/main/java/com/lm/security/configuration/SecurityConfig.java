@@ -3,6 +3,7 @@ package com.lm.security.configuration;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -44,6 +45,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	private TokenService tokenService;
 	
 	@Autowired
+	private MappingJackson2HttpMessageConverter converter;
+	
+	@Autowired
 	private ShopifyVerificationStrategy shopifyVerficationStrategy;
 	
 	@Autowired
@@ -65,9 +69,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		http.addFilterAfter(new ShopifyOriginFilter(shopifyVerficationStrategy, ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH), LogoutFilter.class);
 		http.addFilterAfter(new ShopifyExistingTokenFilter(this.tokenService, ANY_INSTALL_PATH), ShopifyOriginFilter.class);
 		http.addFilterBefore(new BehindHttpsProxyFilter(ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH), OAuth2AuthorizationRequestRedirectFilter.class);
-		http.addFilterBefore(new UninstallFilter(UNINSTALL_URI, shopifyVerficationStrategy, tokenService), BehindHttpsProxyFilter.class);
+		http.addFilterBefore(new UninstallFilter(UNINSTALL_URI, shopifyVerficationStrategy, tokenService, converter), BehindHttpsProxyFilter.class);
 		
 		http.headers().frameOptions().disable()
+			  .and()
+			  .csrf()
+			  	.ignoringAntMatchers(UNINSTALL_URI + "/*")
 			  .and()
 	          .authorizeRequests()
 	          	.mvcMatchers(LOGIN_ENDPOINT).permitAll()

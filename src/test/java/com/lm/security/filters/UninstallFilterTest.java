@@ -13,10 +13,10 @@ import com.lm.security.configuration.SecurityConfig;
 public class UninstallFilterTest {
 		
 	@Test
-	public void successfulMatch() {
+	public void whenCalled_thenSuccessfulMatch() {
 		String url = SecurityConfig.UNINSTALL_URI + "/shopify";
 		
-		UninstallFilter filter = new UninstallFilter(SecurityConfig.UNINSTALL_URI, null, null);
+		UninstallFilter filter = new UninstallFilter(SecurityConfig.UNINSTALL_URI, null, null, null);
 		
 		HttpServletRequest req = mock(HttpServletRequest.class);
 		when(req.getServletPath()).thenReturn("");
@@ -24,5 +24,6 @@ public class UninstallFilterTest {
 		
 		Assert.assertEquals("shopify", filter.matches(req));
 	}
+	
 
 }
