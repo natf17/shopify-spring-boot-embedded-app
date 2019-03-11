@@ -65,9 +65,12 @@ public class ShopifyOAuth2AuthorizedClientService implements OAuth2AuthorizedCli
 	
 	}
 
+	/*
+	 * Permanently delete the store... uninstall
+	 */
 	@Override
 	public void removeAuthorizedClient(String clientRegistrationId, String principalName) {
-
+		tokenService.uninstallStore(principalName);
 		
 	}
 

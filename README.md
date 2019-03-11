@@ -57,7 +57,7 @@ See https://www.oracle.com/technetwork/java/javase/downloads/jce-all-download-51
 - See `ShopifyVerificationStrategy` for how it is determined that a request came from Shopify
 
 ### `ShopifyExistingTokenFilter`
-- This filter matches the installation endpoint path (/install/**).
+- This filter matches the installation endpoint path (/install/shopify).
 - If there is a `ShopifyOriginToken` as the `Authentication`, attempt to replace it with a `OAuth2AuthenticationToken` using the `OAuth2AuthorizedClient` retrieved from the `TokenService`. This will be successful only if this store has already been installed. As a side note, the only way this path can be reached with an `ShopifyOriginToken` is in the embedded app scenario, where Shopify itself invokes the installation uri.
 - If none exists (the store has not been installed as an embedded app or this call is coming as a regular request), this filter clears the `Authentication` in the `SecurityContextHolder`.
 
@@ -96,7 +96,7 @@ The `OAuth2LoginAuthenticationFilter`/`AbstractAuthenticationProcessingFilter` m
 
 The default `OAuth2LoginAuthenticationProvider`...
 1. Uses a custom `OAuth2AccessTokenResponseClient`: `ShopifyAuthorizationCodeTokenResponseClient` to get an `OAuth2AccessTokenResponse`
-2. Asks the custom implementation of `OAuth2UserService<OAuth2UserRequest, OAuth2User>` userService), `DefaultShopifyUserService`, to load the `OAuth2User`.
+2. Asks the custom implementation of `OAuth2UserService<OAuth2UserRequest, OAuth2User>`, `DefaultShopifyUserService`, to load the `OAuth2User`.
 3. Returns a `OAuth2LoginAuthenticationToken` using the `ClientRegistration`, `AuthorizationExchange`, `OAuth2User`, ...
 
 
@@ -153,7 +153,7 @@ The default `OAuth2LoginAuthenticationProvider`...
 
 
 ### `NoRedirectSuccessHandler`
-- Invoked by OAuth2LoginAuthenticationFilter after successful authentication
+- Invoked by `OAuth2LoginAuthenticationFilter` after successful authentication
 - Replaces/decorates the default: `SavedRequestAwareAuthenticationSuccessHandler`
 - Since we can't redirect in an embedded app, an "empty" redirect strategy is given to `SavedRequestAwareAuthenticationSuccessHandler`
 - This handler delegates to `SavedRequestAwareAuthenticationSuccessHandler` for cleanup, and to take care of everything, except for redirecting.
@@ -164,7 +164,7 @@ The default `OAuth2LoginAuthenticationProvider`...
 - Replaces the default: `InMemoryOAuth2AuthorizedClientService` (as stipulated by `OAuth2ClientConfigurerUtils`)
 - Invoked by `OAuth2LoginAuthenticationFilter` when it invokes the default `AuthenticatedPrincipalOAuth2AuthorizedClientRepository` to save the `OAuth2AuthorizedClient` after a user has authenticated
 - Instead of saving them in memory, this implementation attempts to use the custom tokenService to save the store in a database, or to update the store credentials if this store has already been "installed". 
-- When building the OAuth2LoginFilter, OAuth2ClientConfigurerUtils finds this bean.
+- When building the `OAuth2LoginFilter`, `OAuth2ClientConfigurerUtils` finds this bean.
 - It is also invoked by `ShopifyExistingFilter` to see if, in an embedded app, the shop has already installed this app.
 
 **NOTE: updating store credentials will only happen when `ShopifyOAuth2AuthorizedClientService` is called. In an embedded app, it is only called once: when installing. Afterwards, log in directly from the browser to call it.**
@@ -173,13 +173,13 @@ The default `OAuth2LoginAuthenticationProvider`...
 - Invoked by `ShopifyOriginFilter` and `UninstallFilter`
 - Uses `ClientRegistrationRepository` and `ShopifyHttpSessionOAuth2AuthorizationRequestRepository`
 - A request came from Shopify if it has a valid HMAC parameter
-- But for the "whitelisted redirection url", it is also necessary that it provide a nonce in the "state" parameter. Since this is a redirection url, the `OAuth2AuthorizationRequest` should have already been saved in the HttpSession. See `ShopifyHttpSessionOAuth2AuthorizationRequestRepository`
+- But for the "whitelisted redirection url", it is also necessary that it provide a nonce in the "state" parameter. Since this is a redirection url, the `OAuth2AuthorizationRequest` should have already been saved in the `HttpSession`. See `ShopifyHttpSessionOAuth2AuthorizationRequestRepository`
 - This class also provides the logic to verify that an uninstall request came from Shopify by inspecting certain request headers. 
 
 ### `BehindHttpsProxyFilter`
-- Invoked before the OAuth2LoginAuthenticationFilter
-- A problem occurs if this application is running behind a reverse proxy, because Shopify requires SSL connections, and although the reverse proxy might connect to Shopify via SSL, the HttpServletRequest object will still have "http" as its scheme. This is problematic, because although the ShopifyOAuth2AuthorizationRequestResolver is hard coded to create a redirect uri with an https scheme (which is stored in OAuth2AuthorizationRequest), the default OAuth2LoginAuthenticationProvider uses the OAuth2AuthorizationExchangeValidator to compare the current url (http) to the redirect uri (https). 
-- This filter wraps the redirectionPath (/login/app/oauth2/code/...) and loginPath (/install/...) in a HttpServletRequestWrapper that overrides the scheme to "https" and server port to 443
+- Invoked before the `OAuth2LoginAuthenticationFilter`
+- A problem occurs if this application is running behind a reverse proxy, because Shopify requires SSL connections, and although the reverse proxy might connect to Shopify via SSL, the `HttpServletRequest` object will still have "http" as its scheme. This is problematic, because although the `ShopifyOAuth2AuthorizationRequestResolver` is hard coded to create a redirect uri with an https scheme (which is stored in `OAuth2AuthorizationRequest`), the default `OAuth2LoginAuthenticationProvider` uses the `OAuth2AuthorizationExchangeValidator` to compare the current url (http) to the redirect uri (https). 
+- This filter wraps the redirectionPath (/login/app/oauth2/code/...) and loginPath (/install/...) in a `HttpServletRequestWrapper` that overrides the scheme to "https" and server port to 443
 
 
 ## Uninstalling

@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -22,7 +23,7 @@ import com.lm.security.service.TokenService;
 import com.lm.security.service.ShopifyStore;
 
 /* 
- * This filter matches the installation path ((/install/**) and checks the SecurityContextHolder for a 
+ * This filter matches the installation path (/install/shopify) and checks the SecurityContextHolder for a 
  * ShopifyOriginToken to determine whether this request came from Shopify.
  * 
  * If it did, this filter attempts to find a token for the store.
@@ -34,12 +35,13 @@ import com.lm.security.service.ShopifyStore;
 
 public class ShopifyExistingTokenFilter extends GenericFilterBean {
 	
-	private TokenService tokenService;
+	private OAuth2AuthorizedClientService clientService;
 	private AntPathRequestMatcher requestMatcher;
+	private static final String REGISTRATION_ID = SecurityBeansConfig.SHOPIFY_REGISTRATION_ID;
 	
-	public ShopifyExistingTokenFilter(TokenService tokenService, String loginEndpoint) {
-		this.tokenService = tokenService;
-		this.requestMatcher = new AntPathRequestMatcher(loginEndpoint);
+	public ShopifyExistingTokenFilter(OAuth2AuthorizedClientService clientService, String loginEndpoint) {
+		this.clientService = clientService;
+		this.requestMatcher = loginEndpoint.endsWith(REGISTRATION_ID) ? new AntPathRequestMatcher(loginEndpoint) : new AntPathRequestMatcher(loginEndpoint + "/" + REGISTRATION_ID);
 		
 	}
 
@@ -103,7 +105,7 @@ public class ShopifyExistingTokenFilter extends GenericFilterBean {
 		}
 		
 		
-		OAuth2AuthorizedClient client = tokenService.getStore(shopName);
+		OAuth2AuthorizedClient client = clientService.loadAuthorizedClient(REGISTRATION_ID, shopName);
 		
 		if(client == null) {
 			// this store "has not been installed", or salt and passwords are outdated
@@ -115,7 +117,7 @@ public class ShopifyExistingTokenFilter extends GenericFilterBean {
 		OAuth2AuthenticationToken oauth2Authentication = new OAuth2AuthenticationToken(
 				transformAuthorizedClientToUser(client),
 				null,
-				SecurityBeansConfig.SHOPIFY_REGISTRATION_ID);
+				REGISTRATION_ID);
 		
 		return oauth2Authentication;
 	}

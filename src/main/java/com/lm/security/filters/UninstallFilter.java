@@ -12,46 +12,47 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServletServerHttpRequest;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import com.lm.security.authentication.ShopifyVerificationStrategy;
-import com.lm.security.service.TokenService;
+import com.lm.security.configuration.SecurityBeansConfig;
 
+
+/*
+ * If the request matches uninstallEndpoint/shopify:
+ * 		1. Delegate to ShopifyVerificationStrategy to validate the header
+ * 		2. Call doUninstall(...,...)
+ * 		3. Call uninstallSuccess(...,..) upon success
+ */
 public class UninstallFilter implements Filter {
 	
 	private AntPathRequestMatcher matcher;
 	private ShopifyVerificationStrategy verificationStrategy;
-	private TokenService tokenService;
+	private OAuth2AuthorizedClientService clientService;
 	private HttpMessageConverter<Object> messageConverter;
+	private static final String REGISTRATION_ID = SecurityBeansConfig.SHOPIFY_REGISTRATION_ID;
 	
 	
-	public UninstallFilter(String uninstallEndpoint, ShopifyVerificationStrategy verificationStrategy, TokenService tokenService, HttpMessageConverter<Object> converter) {
-		this.matcher = new AntPathRequestMatcher(uninstallEndpoint + "/{registrationId}");
+	public UninstallFilter(String uninstallEndpoint, ShopifyVerificationStrategy verificationStrategy, OAuth2AuthorizedClientService clientService, HttpMessageConverter<Object> converter) {
+		this.matcher = uninstallEndpoint.endsWith(REGISTRATION_ID) ? new AntPathRequestMatcher(uninstallEndpoint) : new AntPathRequestMatcher(uninstallEndpoint + "/" + REGISTRATION_ID);
 		this.verificationStrategy = verificationStrategy;
-		this.tokenService = tokenService;
+		this.clientService = clientService;
 		this.messageConverter = converter;
 	}
 
-	/*
-	 * If the request matches uninstallEndpoint/{registrationId}:
-	 * 		1. Delegate to ShopifyVerificationStrategy to validate the header
-	 * 		2. Call doUninstall(...,...)
-	 * 		3. Call uninstallSuccess(...,..) upon success
-	 */
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 		HttpServletRequest req = (HttpServletRequest)request;
 		HttpServletResponse resp = (HttpServletResponse)response;
-		
-		String registrationId = matches(req);
-		
-		if(registrationId == null) {
+				
+		if(!matches(req)) {
 			chain.doFilter(req, response);
 			return;
 		}
 		
-		if(this.verificationStrategy.isHeaderShopifyRequest(req, registrationId)) {
+		if(this.verificationStrategy.isHeaderShopifyRequest(req, REGISTRATION_ID)) {
 			doUninstall(req, resp);
 			unininstallSuccess(req, resp);
 			
@@ -65,11 +66,9 @@ public class UninstallFilter implements Filter {
 		
 	}
 	
-	protected String matches(HttpServletRequest request) {
-		if(this.matcher.matches(request)) {
-			return this.matcher.extractUriTemplateVariables(request).get("registrationId");
-		}
-		return null;
+	protected boolean matches(HttpServletRequest request) {
+		return this.matcher.matches(request);
+	
 		
 	}
 	
@@ -90,7 +89,7 @@ public class UninstallFilter implements Filter {
 			uninstallFailure(request, response);
 		}
 
-		this.tokenService.uninstallStore(storeName);
+		this.clientService.removeAuthorizedClient(REGISTRATION_ID, storeName);
 	}
 	
 	protected void unininstallSuccess(HttpServletRequest req, HttpServletResponse resp) {

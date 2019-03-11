@@ -23,7 +23,6 @@ import com.lm.security.filters.BehindHttpsProxyFilter;
 import com.lm.security.filters.ShopifyExistingTokenFilter;
 import com.lm.security.filters.ShopifyOriginFilter;
 import com.lm.security.filters.UninstallFilter;
-import com.lm.security.service.TokenService;
 
 
 @EnableWebSecurity
@@ -41,9 +40,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	
 	@Autowired
 	ApplicationContext ctx;
-	
-	@Autowired
-	private TokenService tokenService;
 	
 	@Autowired
 	private MappingJackson2HttpMessageConverter converter;
@@ -71,9 +67,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	protected void configure(HttpSecurity http) throws Exception {
 						
 		http.addFilterAfter(new ShopifyOriginFilter(shopifyVerficationStrategy, ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH), LogoutFilter.class);
-		http.addFilterAfter(new ShopifyExistingTokenFilter(this.tokenService, ANY_INSTALL_PATH), ShopifyOriginFilter.class);
+		http.addFilterAfter(new ShopifyExistingTokenFilter(this.authorizedClientService, INSTALL_PATH), ShopifyOriginFilter.class);
 		http.addFilterBefore(new BehindHttpsProxyFilter(ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH), OAuth2AuthorizationRequestRedirectFilter.class);
-		http.addFilterBefore(new UninstallFilter(UNINSTALL_URI, shopifyVerficationStrategy, tokenService, converter), BehindHttpsProxyFilter.class);
+		http.addFilterBefore(new UninstallFilter(UNINSTALL_URI, shopifyVerficationStrategy, authorizedClientService, converter), BehindHttpsProxyFilter.class);
 		
 		http.headers().frameOptions().disable()
 			  .and()
