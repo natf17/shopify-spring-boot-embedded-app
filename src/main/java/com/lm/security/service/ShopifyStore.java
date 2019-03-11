@@ -18,21 +18,26 @@ public class ShopifyStore  implements OAuth2User, Serializable {
 	private static final long serialVersionUID = -912952033860273123L;
 
 	public static final String ACCESS_TOKEN_KEY = "shopify_access_token";
+	public static final String API_KEY = "shopify_client_api_key";
 
 	private final String name;
 	private final Collection<? extends GrantedAuthority> authorities;
 	private final Map<String, Object> attributes;
 	
-	public ShopifyStore(String name, String accessToken) {			
-		this(name, null, null);
+	public ShopifyStore(String name, String accessToken, String apiKey) {			
+		this.name = name;
+		this.attributes = new HashMap<>();
 		this.attributes.put(ACCESS_TOKEN_KEY, accessToken);
+		this.attributes.put(API_KEY, apiKey);
+		
+		this.authorities = new ArrayList<>();
 
 		
 	}
 	
 	public ShopifyStore(String name, Collection<? extends GrantedAuthority> authorities, Map<String, Object> attributes) {
 		this.name = name;
-		this.authorities =  authorities != null ? authorities : new ArrayList<>();
+		this.authorities = authorities != null ? authorities : new ArrayList<>();
 		this.attributes =  attributes != null ? attributes : new HashMap<>();
 	}
 

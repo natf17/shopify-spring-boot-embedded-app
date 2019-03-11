@@ -28,19 +28,18 @@ import com.lm.security.authentication.ShopifyVerificationStrategy;
 
 /*
  * This filter checks the request to see if it came from Shopify.
- * It only checks the paths passed in via the constructor (matchedPaths and the restrictedPath)
+ * It only checks the paths passed in via the constructor
  * 
- * If the request matches the authorizationPath, it must be from Shopify and contain the valid nonce.
+ * If the request matches the authorizationPath (/login/app/oauth2/code/**), it must be from Shopify and contain the valid nonce.
  * If not, it uses accessDeniedHandler to generate an error
  * 
- * For any other matching path, if it came from Shopify, and it isn't already OAuth2 authenticated, it populates 
+ * For any other matching path (/install/**), if it came from Shopify, and it isn't already authenticated, it populates 
  * the SecurityContext with a ShopifyOriginToken.
  * 
  * If not, the ShopifyOriginToken is not set.
  * 
- * Also, since the installation path is expected to be passed in as a second argument to the constructor
- * of this filter, if the request is not already authenticated, and it comes from Shopify, a session attribute is
- * set to note that this is an embedded app:
+ * Also, if this request matches the installation path (/install/**) and it comes from Shopify, and if it isn't already authenticated), 
+ * a session attribute is set to note that this is an embedded app:
  * 
  * 
  * session.addAttribute("SHOPIFY_EMBEDDED_APP", true);
@@ -163,6 +162,10 @@ public class ShopifyOriginFilter implements Filter {
 		if(session != null) {
 			session.setAttribute(SHOPIFY_EMBEDDED_APP, true);
 		}
+	}
+	
+	public void setAccessDeniedHandler(AccessDeniedHandler handler) {
+		this.accessDeniedHandler = handler;
 	}
 	
 }

@@ -1,7 +1,7 @@
 # Getting started
 ***************************************
 
-How can we use Shopify's default OAuth offline access token in a Spring Boot app, leveraging the power of Spring Security? This working implementation only requires a few lines in the application.properties file for it to work. It is a server that authenticates with Shopify and, upon successful authentication, keeps the OAuth token in a session object, which can be used in a variety of ways, such as a single page web application.
+How can we use Shopify's default OAuth offline access token in a Spring Boot app, leveraging the power of Spring Security? This working implementation only requires a few lines in the application.properties file for it to work. It is a server that authenticates with Shopify and, upon successful authentication, keeps the OAuth token, store name, and api key in a session object, which can be used in a variety of ways, such as a single page web application (or React/Polaris).
 
 We assume you know your way around the Shopify developer site to create apps and development stores. Once you have a development store, create a private app.
 
@@ -49,25 +49,25 @@ See https://www.oracle.com/technetwork/java/javase/downloads/jce-all-download-51
 
 
 ### `ShopifyOriginFilter`
-- This filter makes sure the request possesses the necessary information to verify the request came from Shopify.
-- If the request is to the application installation path, this filter sets a `ShopifyOriginToken` as the `Authentication` object if it is determined that the request came from Shopify (and if there is no "Shopify" Authentication object already).
-- If the request is to what Shopify calls the "whitelisted redirection url", and if the request did not come from Shopify, a 403 response is sent via the AccessDeniedHandler.
-- See ShopifyVerificationStrategy for how it is determined if a request came from Shopify
-- A session attrbiute is added ("SHOPIFY_EMBEDDED_APP", true) if authentication is being attempted as an embedded app
+- This filter makes sure the request possesses the necessary information to verify the request came from Shopify by checking for:
+	1. Checking the HMAC (/install/** and /login/app/oauth2/code/**)
+	2. A valid nonce (/login/app/oauth2/code/**)
+- If the request is to the application installation path (/install/**), this filter sets a `ShopifyOriginToken` as the `Authentication` object if it is determined that the request came from Shopify (and if there is no `OAuth2Token` authentication object already). If it comes from Shopify, this is an embedded app. A session attribute is added ("SHOPIFY_EMBEDDED_APP", true) to note this.
+- If the request is to what Shopify calls the "whitelisted redirection url" (/login/app/oauth2/code/**), the request MUST come from Shopify. Otherwise, a 403 response is sent via the `AccessDeniedHandler`.
+- See `ShopifyVerificationStrategy` for how it is determined that a request came from Shopify
 
 ### `ShopifyExistingTokenFilter`
-- This filter matches the installation endpoint path (/install)
-- If there is a `ShopifyOriginToken` as the `Authentication`, attempt to replace it with a `OAuth2AuthenticationToken` using the `OAuth2AuthorizedClient` retrived from the `TokenService`. This will be successful only if this store has already been installed. As a side note, the only way this path can be reached with an `ShopifyOriginToken` is in the embedded app scenario, where Shopify itself invokes the installation uri.
-- If none exists (the store has not been installed as an embedded app or this call is comming as a regular request), this filter will not modify the `Authentication` in the `SecurityContextHolder`.
-- For every request, clears the `SecurityContextHolder` of `AuthenticationRedirectUriHolder`.
+- This filter matches the installation endpoint path (/install/**).
+- If there is a `ShopifyOriginToken` as the `Authentication`, attempt to replace it with a `OAuth2AuthenticationToken` using the `OAuth2AuthorizedClient` retrieved from the `TokenService`. This will be successful only if this store has already been installed. As a side note, the only way this path can be reached with an `ShopifyOriginToken` is in the embedded app scenario, where Shopify itself invokes the installation uri.
+- If none exists (the store has not been installed as an embedded app or this call is coming as a regular request), this filter clears the `Authentication` in the `SecurityContextHolder`.
 
 ### `ShopifyOAuth2AuthorizationRequestResolver`
 - Replaces the default: `DefaultOAuth2AuthorizationRequestResolver`
 - Invoked by `OAuth2AuthorizationRequestRedirectFilter`.
-- By default, this class will match any request that matches `/install/shopify`.
-- Its `resolve(...)` method always returns null to override the filter's default redirection behavior.
-- If the user is authenticated (via `OAuth2AuthenticationToken`) or if the shop parameter is not provided (if this is not from the embedded app, we at least need the shop name to initiate the OAuth flow with Shopify), then this class does nothing else.
-- If not, this resolver... 
+- By default, this class will match any request that matches `/install/shopify` and is not authenticated (`OAuth2AuthenticationToken`).
+- Its `resolve(...)` method returns null to override the filter's default redirection behavior, EXCEPT when no shop parameter is provided. An implicit `OAuth2AuthorizationRequest` is returned so the filter could handle the redirect. This should never happen in an embedded app.
+- Regardless of whether this resolver is called from an embedded app or not, it requires a "shop" request parameter
+- This resolver... 
 	1. Looks for a `ClientRegistration` that matches "/install/shopify".
 	2. Creates an `OAuth2AuthorizationRequest`:
 		- clientId: from `ClientRegistration`
@@ -75,9 +75,9 @@ See https://www.oracle.com/technetwork/java/javase/downloads/jce-all-download-51
 		- redirectUri: expands and populates the uri template in ClientRegistrarion (default: "{baseUrl}/login/app/oauth2/code/shopify")
 		- scopes: from `ClientRegistration`
 		- state: generated by `Base64StringKeyGenerator`
-		- additionalParameters: contains the registrationId, and the shop name
+		- additionalParameters: contains the registrationId (e.g. "shopify"), and the shop name
 	3. Uses the custom `ShopifyHttpSessionOAuth2AuthorizationRequestRepository` to save the `OAuth2AuthorizationRequest` in the HttpSession
-	4. Invokes the `ShopifyRedirectStrategy` to set an `AuthenticationRedirectUriHolder` in the `Authentication`. This temporary object contains the 2 authorizationUris that the Shopify-provided Javascript needs to redirect: one for redirecting from the parent and another for redirecting from an iFrame.
+	4. Invokes the `ShopifyRedirectStrategy` to set 2 request attributes that contain the 2 authorizationUris that the Shopify-provided Javascript needs to redirect: one for redirecting from the parent and another for redirecting from an iFrame.
 
 
 
@@ -95,7 +95,7 @@ The `OAuth2LoginAuthenticationFilter`/`AbstractAuthenticationProcessingFilter` m
 
 
 The default `OAuth2LoginAuthenticationProvider`...
-1. Uses a custom `OAuth2AccessTokenResponseClient`: `ShopifyAuthorizationCodeTokenResponseClient` to get a `OAuth2AccessTokenResponse`
+1. Uses a custom `OAuth2AccessTokenResponseClient`: `ShopifyAuthorizationCodeTokenResponseClient` to get an `OAuth2AccessTokenResponse`
 2. Asks the custom implementation of `OAuth2UserService<OAuth2UserRequest, OAuth2User>` userService), `DefaultShopifyUserService`, to load the `OAuth2User`.
 3. Returns a `OAuth2LoginAuthenticationToken` using the `ClientRegistration`, `AuthorizationExchange`, `OAuth2User`, ...
 
@@ -105,6 +105,7 @@ The default `OAuth2LoginAuthenticationProvider`...
 - Replaces the default: `DefaultAuthorizationCodeTokenResponseClient`.
 - Invoked by the default `OAuth2LoginAuthenticationProvider`
 - Delegates to the default, but first replaces the `OAuth2AccessTokenResponseHttpMessageConverter` with `CustomOAuth2AccessTokenResponseHttpMessageConverter`
+- It EXPECTS the shop name to be saved as an additional parameter in the `OAuth2AuthorizationRequest`
 - Rewrites every `ClientRegistration`'s tokenUri before delegating to the default, since in Shopify, each tokenUri is unique to the store.
 - Before returning the response, it adds the shop name as an additional parameter to the `OAuth2AccessTokenResponse`
 
@@ -112,49 +113,65 @@ The default `OAuth2LoginAuthenticationProvider`...
 ### `CustomShopifyOAuth2AccessTokenResponseHttpMessageConverter`
 - Replaces the default: `OAuth2AccessTokenResponseHttpMessageConverter`
 - Invoked by `DefaultAuthorizationCodeTokenResponseClient`
+- Still uses the default in `OAuth2AccessTokenResponseHttpMessageConverter` to write the request. Only the converter used to read the response is replaced.
 - The default converter expects a "token_type" parameter in the response along with the token, but Shopify does not send it. Also, Shopify sends the scope as a string delimited by "," instead of the default " ". This converter takes care of these issues.
 
 
 
 ### `ShopifyHttpSessionOAuth2AuthorizationRequestRepository`*
 - "Replaces" the default: `HttpSessionOAuth2AuthorizationRequestRepository`
-- Invoked by `ShopifyOAuth2AuthorizationRequestResolver`, 'ShopifyVerificationStrategy', and 'BehindHttpsProxyFilter'
-- In the `ShopifyOAuth2AuthorizationRequestResolver`, when we call the requestRepository's `saveAuthorizationRequest()` method, we don't have an `HttpServletResponse`. `ShopifyHttpSessionOAuth2AuthorizationRequestRepository` is functionally identical but with a different method signature.
-- In 'ShopifyVerificationStrategy' and 'BehindHttpsProxyFilter', we need to extract the current `OAuth2AuthorizationRequest` for the request. This class provides that functionality.
+- Invoked by:
+	1. `ShopifyOAuth2AuthorizationRequestResolver`: to save the `OAuth2AuthorizationRequest`
+	2. `ShopifyVerificationStrategy`: to extract the current `OAuth2AuthorizationRequest`
+	3. `BehindHttpsProxyFilter`: to extract the current `OAuth2AuthorizationRequest`
+- In the `ShopifyOAuth2AuthorizationRequestResolver`, when we call the requestRepository's `saveAuthorizationRequest()` method, we don't have an `HttpServletResponse`. `ShopifyHttpSessionOAuth2AuthorizationRequestRepository` is functionally identical but with a different method signature. The `OAuth2AuthorizationRequest` is saved in the session as a `Map<String, OAuth2AuthorizationRequest>`
 
 
 ### `ShopifyRedirectStrategy`*
 - "Replaces" the default:` DefaultRedirectStrategy`
 - Invoked by `ShopifyOAuth2AuthorizationRequestResolver`
-- It does not redirect
-- It populates `Authentication` with a `AuthenticationRedirectUriHolder`, which contains the redirection URIs the Javascript will use to redirect. This allows for "redirecting" from an iFrame in an embedded app setting.
+- Instead of redirecting, it saves 2 authorization redirection URIs as request attributes. This allows for "redirecting" from an iFrame in an embedded app setting.
+- This means that a request to "/install/**" will have either:
+	1. `OAuth2AuthenticationToken`: if the request came from an embedded app that has already installed this app
+	2. `AnonymousAuthenticationToken`: if the request is not coming from an embedded app (regardless of whether or not this app has been installeds)
+	3. `ShopifyOriginToken`: if the request came from an embedded app (and this app has not been installed)
 
 
-* Note: The classes they replace would be invoked in the `OAuth2LoginAuthenticationFilter`, but since they are not (since the resolver always returns null), we are forced to use their functional equivalents in the resolver.
+* Note: The classes they replace would be invoked in the `OAuth2LoginAuthenticationFilter`, but since they are not (since the resolver returns null), we are forced to use their functional equivalents in the resolver.
 
 
 
 ### `DefaultShopifyUserService`
 - Replaces the `DefaultOAuth2UserService`
 - Invoked by `OAuth2LoginAuthenticationProvider`
-- Instead of making a request for UserInfo, this implementation instantiates a `ShopifyStore` that contains the name of the store, and its access token, and returns it to the provider
+- Instead of making a request for user info, this implementation instantiates a `ShopifyStore` that contains:
+	1. the name of the store as the principal name
+	2. the access token as an additional attribute
+	3. the api key as an additional attribute
+- This `ShopifyStore` is returned to the provider
 - The shop name is retrieved from the `OAuth2UserRequest` that was passed in. The `ShopifyAuthorizationCodeTokenResponseClient` sets it as an additional parameter in the `OAuth2AccessTokenResponse`, whose additional parameters are used to create a `OAuth2UserRequest`
 
 
 ### `NoRedirectSuccessHandler`
+- Invoked by OAuth2LoginAuthenticationFilter after successful authentication
 - Replaces/decorates the default: `SavedRequestAwareAuthenticationSuccessHandler`
 - Since we can't redirect in an embedded app, an "empty" redirect strategy is given to `SavedRequestAwareAuthenticationSuccessHandler`
 - This handler delegates to `SavedRequestAwareAuthenticationSuccessHandler` for cleanup, and to take care of everything, except for redirecting.
-- It performs a forward to the "authorization url".
+- It performs a forward to the "authorization url", which bypasses the filter chain.
 
 
 ### `ShopifyOAuth2AuthorizedClientService`
 - Replaces the default: `InMemoryOAuth2AuthorizedClientService` (as stipulated by `OAuth2ClientConfigurerUtils`)
-- Invoked by `OAuth2LoginAuthenticationFilter` when it invokes the default `AuthenticatedPrincipalOAuth2AuthorizedClientRepository` after a user has authenticated
-- Instead of saving them in memory, this implementation attempts to use the custom tokenService to save the store in a database, or to update the store credentials if this store has already been "installed".
+- Invoked by `OAuth2LoginAuthenticationFilter` when it invokes the default `AuthenticatedPrincipalOAuth2AuthorizedClientRepository` to save the `OAuth2AuthorizedClient` after a user has authenticated
+- Instead of saving them in memory, this implementation attempts to use the custom tokenService to save the store in a database, or to update the store credentials if this store has already been "installed". 
+- When building the OAuth2LoginFilter, OAuth2ClientConfigurerUtils finds this bean.
+- It is also invoked by `ShopifyExistingFilter` to see if, in an embedded app, the shop has already installed this app.
+
+**NOTE: updating store credentials will only happen when `ShopifyOAuth2AuthorizedClientService` is called. In an embedded app, it is only called once: when installing. Afterwards, log in directly from the browser to call it.**
 
 ### `ShopifyVerificationStrategy`
-- Invoked by `ShopifyOriginFilter`
+- Invoked by `ShopifyOriginFilter` and `UninstallFilter`
+- Uses `ClientRegistrationRepository` and `ShopifyHttpSessionOAuth2AuthorizationRequestRepository`
 - A request came from Shopify if it has a valid HMAC parameter
 - But for the "whitelisted redirection url", it is also necessary that it provide a nonce in the "state" parameter. Since this is a redirection url, the `OAuth2AuthorizationRequest` should have already been saved in the HttpSession. See `ShopifyHttpSessionOAuth2AuthorizationRequestRepository`
 - This class also provides the logic to verify that an uninstall request came from Shopify by inspecting certain request headers. 

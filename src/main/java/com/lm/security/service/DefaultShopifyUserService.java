@@ -8,12 +8,16 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import com.lm.security.web.ShopifyOAuth2AuthorizationRequestResolver;
 
 /*
- * Since the default OAuth2LoginAuthenticationProvider sets the OAuth2User as the principal,
- * and since our application will need the authentication token for every request, it will
- * be stored as an additional parameter in the OAuth2User.
+ * This class is called by OAuth2LoginAuthenticationProvider when creating the OAuth2LoginAuthenticationToken.
  * 
- * The OAuth2UserRequest has the shop parameter because our custom ShopifyAuthorizationCodeTokenResponseClient
- * stored it there.
+ * Since the default OAuth2LoginAuthenticationProvider sets the OAuth2User as the principal,
+ * this class instantiates a ShopifyStore that contains:
+ * 	1. the shop name as the "name' of the principal
+ * 	2. the api key as an additional attribute
+ * 	3. the the access token as an additional attribute
+ * 
+ * Note: the OAuth2UserRequest has the shop parameter because our custom ShopifyAuthorizationCodeTokenResponseClient
+ * stored it in the OAuth2AccessTokenResponse, which was used to create the OAuth2UserRequest.
  * 
  */
 
@@ -23,8 +27,8 @@ public class DefaultShopifyUserService implements OAuth2UserService<OAuth2UserRe
 	@Override
 	public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
 		Object shopName = userRequest.getAdditionalParameters().get(ShopifyOAuth2AuthorizationRequestResolver.SHOPIFY_SHOP_PARAMETER_KEY_FOR_TOKEN);
-		
-		return new ShopifyStore((String)shopName, userRequest.getAccessToken().getTokenValue());
+		String apiKey = userRequest.getClientRegistration().getClientId();
+		return new ShopifyStore((String)shopName, userRequest.getAccessToken().getTokenValue(), apiKey);
 	}
 	
 }

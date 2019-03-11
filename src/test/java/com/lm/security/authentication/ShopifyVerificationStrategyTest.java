@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,6 +28,7 @@ public class ShopifyVerificationStrategyTest {
 		
 	}
 	
+	
 	@Test
 	public void validHMACRandomReturnsTrue() {
 		// string without HMAC
@@ -35,7 +37,7 @@ public class ShopifyVerificationStrategyTest {
 		ShopifyVerificationStrategy strategy = spy(new ShopifyVerificationStrategy(null,null));
 
 		// The hash of the string without the HMAC
-		String hmacValue = strategy.hash(secret, stringNoHMAC);
+		String hmacValue = ShopifyVerificationStrategy.hash(secret, stringNoHMAC);
 		
 		// The query piece with the valid HMAC
 		String hmacString = ShopifyVerificationStrategy.HMAC_PARAMETER + "=" + hmacValue + "&";
@@ -71,7 +73,7 @@ public class ShopifyVerificationStrategyTest {
 		ShopifyVerificationStrategy strategy = spy(new ShopifyVerificationStrategy(null,null));
 
 		// The hash of the string without the HMAC
-		String hmacValue = strategy.hash(secret, stringNoHMAC);
+		String hmacValue = ShopifyVerificationStrategy.hash(secret, stringNoHMAC);
 		
 		// The query piece with the valid HMAC
 		String hmacString = "&" + ShopifyVerificationStrategy.HMAC_PARAMETER + "=" + hmacValue;
@@ -111,7 +113,7 @@ public class ShopifyVerificationStrategyTest {
 		ShopifyVerificationStrategy strategy = spy(new ShopifyVerificationStrategy(null,null));
 
 		// The wrong hash of the string without the HMAC
-		String hmacValue = strategy.hash(secret, stringNoHMAC) + "asd";
+		String hmacValue = ShopifyVerificationStrategy.hash(secret, stringNoHMAC) + "asd";
 		
 		// The query piece with the valid HMAC
 		String hmacString = "&" + ShopifyVerificationStrategy.HMAC_PARAMETER + "=" + hmacValue;
@@ -177,7 +179,7 @@ public class ShopifyVerificationStrategyTest {
 		ShopifyVerificationStrategy strategy = spy(new ShopifyVerificationStrategy(null,null));
 
 		// The hash of the string without the HMAC
-		String hmacValue = strategy.hash(secret, stringNoHMAC);
+		String hmacValue = ShopifyVerificationStrategy.hash(secret, stringNoHMAC);
 		
 		// The query piece with the valid HMAC
 		String hmacString = "&" + ShopifyVerificationStrategy.HMAC_PARAMETER + "=" + hmacValue;
@@ -211,7 +213,7 @@ public class ShopifyVerificationStrategyTest {
 		ShopifyVerificationStrategy strategy = new ShopifyVerificationStrategy(null, null);
 		String body = "{\"id\":689034}";
 		
-		String hmac = strategy.hash(this.secret, body);
+		String hmac = Base64.getEncoder().encodeToString(ShopifyVerificationStrategy.hash(this.secret, body).getBytes());
 
 		Assert.assertFalse(strategy.isShopifyHeaderRequest(body + "ds", hmac, secret));
 	}
@@ -221,9 +223,9 @@ public class ShopifyVerificationStrategyTest {
 		ShopifyVerificationStrategy strategy = new ShopifyVerificationStrategy(null, null);
 		String body = "{\"id\":689034}";
 		
-		String hmac = strategy.hash(this.secret, body);
+		String hmac = Base64.getEncoder().encodeToString(ShopifyVerificationStrategy.hash(this.secret, body).getBytes());
 
-		Assert.assertFalse(strategy.isShopifyHeaderRequest(body, hmac, this.secret));
+		Assert.assertTrue(strategy.isShopifyHeaderRequest(body, hmac, this.secret));
 	}
 	
 	@Test
@@ -233,35 +235,35 @@ public class ShopifyVerificationStrategyTest {
 		String body = "{\"id\":689034}";
 		String secret = "dfdfbjhew";
 		
-		String hmac = strategy.hash(secret, body);
+		String hmac = Base64.getEncoder().encodeToString(ShopifyVerificationStrategy.hash(secret, body).getBytes());
 		
 		HttpServletRequest request = mock(HttpServletRequest.class);
 		
-		when(request.getAttribute("X-Shopify-Hmac-SHA256")).thenReturn(hmac);
+		when(request.getHeader(ShopifyVerificationStrategy.HMAC_HEADER)).thenReturn(hmac);
 		doReturn(body).when(strategy).getBody(any());
 		doReturn(secret).when(strategy).getClientSecretByRegistrationId(any());
 		
-		strategy.isHeaderShopifyRequest(request, "registrationId");
+		Assert.assertTrue(strategy.isHeaderShopifyRequest(request, "registrationId"));
 	}
 	
-	
+
 	@Test
-	public void givenInvalidRequestThenIsHeaderShopifyRequestIsTrue() {
+	public void givenInvalidRequestThenIsHeaderShopifyRequestIsFalse() {
 		
 		ShopifyVerificationStrategy strategy = spy(new ShopifyVerificationStrategy(null, null));
 		
-		String body = "{\"id\":689034}" + "sad";
+		String body = "{\"id\":689034}";
 		String secret = "dfdfbjhew";
 		
-		String hmac = strategy.hash(secret, body);
+		String hmac = Base64.getEncoder().encodeToString(ShopifyVerificationStrategy.hash(secret, body).getBytes());
 		
 		HttpServletRequest request = mock(HttpServletRequest.class);
 		
-		when(request.getAttribute("X-Shopify-Hmac-SHA256")).thenReturn(hmac);
-		doReturn(body).when(strategy).getBody(any());
+		when(request.getHeader(ShopifyVerificationStrategy.HMAC_HEADER)).thenReturn(hmac);
+		doReturn(body + "sad").when(strategy).getBody(any());
 		doReturn(secret).when(strategy).getClientSecretByRegistrationId(any());
 		
-		strategy.isHeaderShopifyRequest(request, "registrationId");
+		Assert.assertFalse(strategy.isHeaderShopifyRequest(request, "registrationId"));
 		
 	}
 

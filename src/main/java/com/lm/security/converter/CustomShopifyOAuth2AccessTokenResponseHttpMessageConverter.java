@@ -15,6 +15,9 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
 import org.springframework.util.StringUtils;
 
+/*
+ * This converter is a OAuth2AccessTokenResponseHttpMessageConverter but with a custom response converter.
+ */
 public class CustomShopifyOAuth2AccessTokenResponseHttpMessageConverter extends OAuth2AccessTokenResponseHttpMessageConverter {
 
 	
@@ -25,7 +28,7 @@ public class CustomShopifyOAuth2AccessTokenResponseHttpMessageConverter extends 
 	
 	/**
 	 * Identical to the OAuth2AccessTokenResponseConverter provided in OAuth2AccessTokenResponseHttpMessageConverter.
-	 * The major difference is that this converter will not fail if "token_type" is not provided
+	 * The major difference is that this converter will not fail if "token_type" is not provided. It defaults to "bearer".
 	 */
 	private static class ShopifyOAuth2AccessTokenResponseConverter implements Converter<Map<String, String>, OAuth2AccessTokenResponse> {
 		private static final Set<String> TOKEN_RESPONSE_PARAMETER_NAMES = Stream.of(

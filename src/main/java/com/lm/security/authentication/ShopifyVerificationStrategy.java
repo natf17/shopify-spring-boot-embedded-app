@@ -40,7 +40,11 @@ public class ShopifyVerificationStrategy {
 	}
 	
 	/*
-	 * Perform HMAC verification as directed by Shopify
+	 * Perform HMAC verification as directed by Shopify:
+	 * 
+	 * 1. Obtains the hmac parameter from the query string
+	 * 2. Obtains the client secret using the HttpServletRequest
+	 * 3. Passes the query string, hmac, and secret to overloaded method.
 	 */
 	public boolean isShopifyRequest(HttpServletRequest request) {
 		Map<String,String[]> requestParameters = this.getRequestParameters(request);
@@ -78,6 +82,12 @@ public class ShopifyVerificationStrategy {
 		
 	}
 	
+	/*
+	 * 1. Constructs the hmac parameter as it should appear in the url.
+	 * 2. Removes it from the query string.
+	 * 3. The query string is hashed with the secret.
+	 * 4. If the hash equals the hmac value, the request came from Shopify.
+	 */
 	private boolean isShopifyQueryRequest(String rawQueryString, String hmac, String secret) {
 
 		String hmacQueryStringPiece = HMAC_PARAMETER + "=" + hmac + "&";
@@ -90,7 +100,9 @@ public class ShopifyVerificationStrategy {
 			processedQuery = rawQueryString.replaceFirst(Pattern.quote("&" + HMAC_PARAMETER + "=" + hmac), "");
 
 			if(rawQueryString.equals(processedQuery)) {
-				throw new RuntimeException("An error occurred processing the HMAC pair.");
+				// hmac not found 
+				// it should have been found because the hmac parameter should be from query string)
+				throw new RuntimeException("No HMAC found.");
 
 			}
 		}
@@ -104,18 +116,7 @@ public class ShopifyVerificationStrategy {
 		return false;
 		
 	}
-	
-	public boolean isShopifyHeaderRequest(String body, String hmac, String secret) {
-		
-		String hashValue = this.hash(secret, hmac);
-		
-		// From Shopify:
-		// "Each webhook request includes a base64-encoded X-Shopify-Hmac-SHA256 header"
-		
-		String encodedValue = Base64.getEncoder().encodeToString(hashValue.getBytes());
-		
-		return encodedValue.equals(hmac);
-	}
+
 	
 	/*
 	 * This method makes sure there is an OAuth2AuthorizationRequest in the HttpSession
@@ -153,27 +154,40 @@ public class ShopifyVerificationStrategy {
 	}
 	
 	/*
-	 * Note: This method is called 
 	 * 
-	 * 1. In an embedded app when HMAC verification must be done on the
-	 * 	  install path 
+	 * This method uses the HttpServletRequest to obtain the client secret to use.
 	 * 
-	 * 2. For every authorization redirect uri ("white-listed" urls)
 	 * 
-	 * In 1, the ClientRegistration is retrieved exclusively using the registration is extracted from the url 
-	 * In 2, the ClientRegistration is retrieved exclusively using the session's OAuth2AuthorizationRequest's clientId.
+	 * Use the ShopifyHttpSessionOAuth2AuthorizationRequestRepository to get the OAuth2AuthorizationRequest 
+	 * for this request.
+	 * 
+	 * Method 1: no OAuth2AuthorizationRequest
+	 * 		- Use ShopifyHttpSessionOAuth2AuthorizationRequestRepository to extract the registrationId 
+	 * 		  from the request path
+	 * 		- Delegate to getClientSecretByRegistrationId(...) to search the ClientRegistrationRepository to get the 
+	 * 		  ClientRegistration that matches the registrationId and obtain the client secret
+	 * 
+	 * Method 2: OAuth2AuthorizationRequest found
+	 * 		- Obtain the clientId from the OAuth2AuthorizationRequest
+	 * 		- Search the ClientRegistrationRepository to get the 
+	 * 		  ClientRegistration that matches the clientId and obtain the client secret
+	 * 
+	 * 
+	 * "/install/**": uses method 1 because no OAuth2AuthorizationRequest exists yet. 
+	 * 				  (ShopifyOriginFilter is before OAuth2AuthorizationRequestRedirectFilter)
+	 * 
+	 * "/login/app/oauth2/code/**": uses method 2 because an OAuth2AuthorizationRequest has already been saved
+	 * 
 	 */
 	
-	public String getClientSecret(HttpServletRequest req) {
+	protected String getClientSecret(HttpServletRequest req) {
 		
 		Map.Entry<String, OAuth2AuthorizationRequest> authReq = authReqRepository.getFirstAuthorizationRequest(req);
 		String clientId = null;
 		ClientRegistration reg = null;
 		String clientSecret = null;
 		
-		// Prefer obtaining the ClientRegistration using the clientId saved in the OAuth2AuthorizationRequest
-		// But in embedded app, this is the first time a request is made, so no
-		// OAuth2AuthorizationRequest is in the session...
+
 		if(authReq == null) {
 			String registrationId = authReqRepository.extractRegistrationId(req);
 			if(registrationId == null) {
@@ -211,7 +225,11 @@ public class ShopifyVerificationStrategy {
 		
 	}
 	
-	public String getClientSecretByRegistrationId(String registrationId) {
+	/*
+	 * Finds the client secret associated with the ClientRegistration with the given id by searching
+	 * the ClientRegistrationRepository
+	 */
+	protected String getClientSecretByRegistrationId(String registrationId) {
 		ClientRegistration reg = clientRegistrationRepository.findByRegistrationId(registrationId);
 		
 		if(reg == null) {
@@ -221,11 +239,18 @@ public class ShopifyVerificationStrategy {
 		return reg.getClientSecret();
 	}
 	
-	public Map<String,String[]> getRequestParameters(HttpServletRequest req) {
+	/*
+	 * Allows swapping the request parameter map for unit tests 
+	 */
+	protected Map<String,String[]> getRequestParameters(HttpServletRequest req) {
 		return req.getParameterMap();
 
 	}
-	public String hash(String secret, String message) {
+	
+	/*
+	 * Hashes the message using the secret
+	 */
+	public static String hash(String secret, String message) {
 		
 		String hash = null;
 		
@@ -245,7 +270,10 @@ public class ShopifyVerificationStrategy {
 		return hash;
 	}
 	
-	public String getBody(HttpServletRequest req) {
+	/*
+	 * Returns the body of HttpServletRequest as a String
+	 */
+	protected String getBody(HttpServletRequest req) {
 		InputStream in = null;
 		 
 		String body = null;
@@ -259,6 +287,29 @@ public class ShopifyVerificationStrategy {
 		return body;
 	}
 	
+	/*
+	 * Uses a secret to hash the body.
+	 * The result is then base64-encoded to compare to the base64-encoded hmac
+	 */
+	protected boolean isShopifyHeaderRequest(String body, String hmac, String secret) {
+		
+		String hashValue = hash(secret, body);
+
+		// From Shopify:
+		// "Each webhook request includes a base64-encoded X-Shopify-Hmac-SHA256 header"
+		
+		String encodedValue = Base64.getEncoder().encodeToString(hashValue.getBytes());
+
+		return encodedValue.equals(hmac);
+	}
+	
+	/*
+	 * Uninstalling the app (see UninstallFilter):
+	 * 
+	 * 	1. Makes sure the request has the X-Shopify-Hmac-SHA256 header
+	 * 	2. Delegates to isShopifyHeaderRequest(...,...,...) to confirm the hash of the body
+	 * 	   matches the hmac.
+	 */
 	public boolean isHeaderShopifyRequest(HttpServletRequest request, String registrationId) {
 		String hmacValue = request.getHeader(HMAC_HEADER);
 		
@@ -269,7 +320,7 @@ public class ShopifyVerificationStrategy {
 		String secret = getClientSecretByRegistrationId(registrationId);
 		
 		String body = getBody(request);
-
+	
 		return isShopifyHeaderRequest(body, hmacValue, secret);
 	}
 	

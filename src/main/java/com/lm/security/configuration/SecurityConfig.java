@@ -7,6 +7,7 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -54,13 +55,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	private OAuth2AuthorizationRequestResolver shopifyOauth2AuthorizationRequestResolver;
 	
 	@Autowired
-	OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient;
+	private OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient;
 	
 	@Autowired
-	OAuth2UserService<OAuth2UserRequest, OAuth2User> userService;
+	private OAuth2UserService<OAuth2UserRequest, OAuth2User> userService;
 	
 	@Autowired
-	AuthenticationSuccessHandler successHandler;
+	private AuthenticationSuccessHandler successHandler;
+	
+	@Autowired
+	private OAuth2AuthorizedClientService authorizedClientService;
 	
 	
 	@Override

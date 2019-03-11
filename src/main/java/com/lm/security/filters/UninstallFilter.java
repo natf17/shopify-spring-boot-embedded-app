@@ -32,6 +32,12 @@ public class UninstallFilter implements Filter {
 		this.messageConverter = converter;
 	}
 
+	/*
+	 * If the request matches uninstallEndpoint/{registrationId}:
+	 * 		1. Delegate to ShopifyVerificationStrategy to validate the header
+	 * 		2. Call doUninstall(...,...)
+	 * 		3. Call uninstallSuccess(...,..) upon success
+	 */
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
@@ -67,7 +73,12 @@ public class UninstallFilter implements Filter {
 		
 	}
 	
-	public void doUninstall(HttpServletRequest request, HttpServletResponse response) throws IOException{
+	/*
+	 * Attempt to uninstall the store specified in the body:
+	 * 	1. Get the request body as an UninstallMessage object
+	 * 	2. Pass the shop domain from the body to tokenService to uninstall
+	 */
+	protected void doUninstall(HttpServletRequest request, HttpServletResponse response) throws IOException{
 		UninstallMessage body = this.extractBody(request);
 
 		if(body == null) {

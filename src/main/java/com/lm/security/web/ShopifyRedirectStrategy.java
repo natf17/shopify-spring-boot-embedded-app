@@ -11,7 +11,9 @@ import org.springframework.security.web.DefaultRedirectStrategy;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 
-
+/*
+ * Instead of redirecting, the redirect uris are added to the request as attributes.
+ */
 public class ShopifyRedirectStrategy extends DefaultRedirectStrategy {
 	public final String I_FRAME_REDIRECT_URI = "/oauth/authorize";
 	private final String STATE = OAuth2ParameterNames.STATE;
@@ -32,12 +34,7 @@ public class ShopifyRedirectStrategy extends DefaultRedirectStrategy {
 		request.setAttribute(I_FRAME_AUTHENTICATION_URI_KEY, addRedirectParams(I_FRAME_REDIRECT_URI, authorizationRequest));
 		request.setAttribute(PARENT_AUTHENTICATION_URI_KEY, addRedirectParams(parentFrameRedirectUrl, authorizationRequest));
 		
-/*
-		SecurityContextHolder.getContext().setAuthentication(new AuthenticationRedirectUriHolder(
-																addRedirectParams(parentFrameRedirectUrl, authorizationRequest), 
-																addRedirectParams(I_FRAME_REDIRECT_URI, authorizationRequest)
-																));
-		*/
+
 	}
 	
 	

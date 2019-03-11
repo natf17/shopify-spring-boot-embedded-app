@@ -21,10 +21,11 @@ import com.lm.security.converter.CustomShopifyOAuth2AccessTokenResponseHttpMessa
 
 /*
  * This implementation of OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>
- * modifies the OAuth2AuthorizationCodeGrantRequest's clientRegistration
- * by using the shop name to generate a valid tokenUri.
+ * modifies the OAuth2AuthorizationCodeGrantRequest's clientRegistration by using the shop name, 
+ * which it expects to find as an additional parameter in the OAuth2AuthorizationRequest)
+ * to generate a valid tokenUri.
  * 
- * It also makes sure the shop name is available later (by the OAuth2UserService) by saving the shop name
+ * It also makes sure the shop name is available later (used by the OAuth2UserService) by saving the shop name
  * as an additional parameter in the OAuth2AccessTokenResponse
  * 
  * 

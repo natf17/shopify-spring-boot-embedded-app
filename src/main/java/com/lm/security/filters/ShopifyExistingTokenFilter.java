@@ -22,7 +22,8 @@ import com.lm.security.service.TokenService;
 import com.lm.security.service.ShopifyStore;
 
 /* 
- * This filter checks the SecurityContextHolder for a ShopifyOriginToken to determine whether this request came from Shopify.
+ * This filter matches the installation path ((/install/**) and checks the SecurityContextHolder for a 
+ * ShopifyOriginToken to determine whether this request came from Shopify.
  * 
  * If it did, this filter attempts to find a token for the store.
  * If there is no token, the SecurityContextHolder's Authentication is left untouched.
@@ -61,21 +62,21 @@ public class ShopifyExistingTokenFilter extends GenericFilterBean {
 		OAuth2AuthenticationToken oauth2Token = null;
 		
 		if(auth != null && auth instanceof ShopifyOriginToken) {
-System.out.println("ShopifyOriginToken found");
+			// this request is to the installation path from an embedded app
 			originToken = (ShopifyOriginToken)auth;
 			
 			if(originToken.isFromShopify()) {
-
+				
 				oauth2Token = this.getToken(req);
 				if(oauth2Token != null) {
-					System.out.println("Setting token");
 
 					this.setToken(oauth2Token);
 				}
 				
 			}
 			
-			// if ShopifyOriginToken is still in the SecurityContextHolder, remove it
+			// If the store has not been installed, ShopifyOriginToken is still in the SecurityContextHolder
+			// Remove it
 			if(SecurityContextHolder.getContext().getAuthentication() instanceof ShopifyOriginToken) {
 				SecurityContextHolder.getContext().setAuthentication(null);
 			}
@@ -83,8 +84,6 @@ System.out.println("ShopifyOriginToken found");
 			
 		}
 		
-		System.out.println("ShopifyExistingTokenFilter");
-
 		chain.doFilter(request, response);
 		
 		
@@ -111,7 +110,7 @@ System.out.println("ShopifyOriginToken found");
 			return null;
 		}
 
-		// create a OAuth2AuthenticationToken
+		// create an OAuth2AuthenticationToken
 		
 		OAuth2AuthenticationToken oauth2Authentication = new OAuth2AuthenticationToken(
 				transformAuthorizedClientToUser(client),
@@ -123,8 +122,10 @@ System.out.println("ShopifyOriginToken found");
 	
 	
 	private OAuth2User transformAuthorizedClientToUser(OAuth2AuthorizedClient client) {
+		String apiKey = client.getClientRegistration().getClientId();
+		
 		return new ShopifyStore(client.getPrincipalName(),
-														  client.getAccessToken().getTokenValue());
+														  client.getAccessToken().getTokenValue(), apiKey);
 	}
 	
 	

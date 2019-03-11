@@ -23,8 +23,13 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.lm.security.service.TokenService;
 
 /*
- * This class is called by OAuth2AuthorizationRequestRedirectFilter
- * and resolve(req) always return null to prevent redirection (as this is taken care of by the Shopify javascript)
+ * This class is called by OAuth2AuthorizationRequestRedirectFilter to save the OAuth2AuthorizationRequest
+ * when this app is being installed (embedded app) or if the user want to log in (not embedded).
+ * 
+ * The resolve(req) method returns null to prevent redirection (as this is taken care of by the Shopify javascript).
+ * 
+ * However, if no shop is provided as a parameter, an OAuth2AuthorizationRequest is returned to redirect to log in.
+ * It is implicit, so that it will not be saved by the filter.
  * 
  */
 public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2AuthorizationRequestResolver {
@@ -51,7 +56,8 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 	
 
 	/*
-	 * In DefaultOAuth2AuthorizationRequestResolver, this method is expected to redirect the user to 
+	 * In DefaultOAuth2AuthorizationRequestResolver, this method is expected to redirect the user to log in
+	 * 
 	 */
 	@Override
 	public OAuth2AuthorizationRequest resolve(HttpServletRequest request) {
@@ -118,7 +124,6 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 		// Save the OAuth2AuthorizationRequest
 		customAuthorizationRequestRepository.saveAuthorizationRequest(authorizationRequest, request);
 		
-		System.out.println("HAHAHA");
 		// DO NOT redirect, build redirecturi: DefaultRedirectStrategy		
 		authorizationRedirectStrategy.saveRedirectAuthenticationUris(request, authorizationRequest);
 		

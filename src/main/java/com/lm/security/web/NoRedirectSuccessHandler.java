@@ -14,11 +14,14 @@ import org.springframework.security.web.authentication.SavedRequestAwareAuthenti
 import com.lm.security.configuration.SecurityConfig;
 
 /*
+ * The NoRedirectSuccessHandler is invoked by OAuth2LoginAuthenticationFilter upon successful authentication.
+ * 
  * This success handler wraps the default SavedRequestAwareAuthenticationSuccessHandler
  * so that it will perform as intended, but without the redirect support.
  * Thus, the DefaultRedirectStrategy is replaced with an empty implementation.
  * 
  * Afterwards, however, it will forward to the the "authentication url" resource.
+ * By default, the Spring Security filter chain will not be triggered for the forward.
  * 
  */
 public class NoRedirectSuccessHandler implements AuthenticationSuccessHandler {
