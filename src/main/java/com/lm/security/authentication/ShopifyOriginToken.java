@@ -9,7 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
  * Set by ShopifyExistingTokenFilter
  * 
  * This Authentication implementation holds information regarding the source of the request:
- * whether or not it comes from Shopify.
+ * whether or not it comes from Shopify. It never exists past the ShopifyExistingTokenFilter
  * 
  */
 public class ShopifyOriginToken implements Authentication {

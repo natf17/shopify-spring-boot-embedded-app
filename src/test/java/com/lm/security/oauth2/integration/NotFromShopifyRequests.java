@@ -19,6 +19,16 @@ import com.lm.ShopifyEmbeddedAppSpringBootApplication;
 import com.lm.security.configuration.SecurityConfig;
 import com.lm.security.oauth2.integration.config.TestConfig;
 
+/*
+ * Test several endpoints to make sure that either the user is redirected or
+ * the oauth2 login flow is commenced.
+ * 
+ * Test preconditions:
+ * 
+ * 1. ClientRegistration ("shopify")
+ * 2. InMemoryClientRegistrationRepository
+ * 3. OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> (mock)
+ */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes= {ShopifyEmbeddedAppSpringBootApplication.class, TestConfig.class})
 @AutoConfigureMockMvc
@@ -86,7 +96,7 @@ public class NotFromShopifyRequests {
 	
 	/*
 	 * Access LOGIN_ENDPOINT
-	 * ... We are not authenticated
+	 * Should retuen 200 if we are not authenticated
 	 */
 	@Test
 	public void whenLoginThenOk() throws Exception {

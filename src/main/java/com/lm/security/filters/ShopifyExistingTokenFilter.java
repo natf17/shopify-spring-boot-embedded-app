@@ -57,9 +57,9 @@ public class ShopifyExistingTokenFilter extends GenericFilterBean {
 			return;
 
 		}
-		
 
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
 		ShopifyOriginToken originToken = null;
 		OAuth2AuthenticationToken oauth2Token = null;
 		

@@ -11,7 +11,10 @@ import org.junit.Test;
 import com.lm.security.configuration.SecurityConfig;
 
 public class UninstallFilterTest {
-		
+	
+	/*
+	 * When the uninstall url is hit, the UninstallFilter should be invoked
+	 */
 	@Test
 	public void whenCalled_thenSuccessfulMatch() {
 		String url = SecurityConfig.UNINSTALL_URI + "/shopify";
@@ -22,7 +25,7 @@ public class UninstallFilterTest {
 		when(req.getServletPath()).thenReturn("");
 		when(req.getPathInfo()).thenReturn(url);
 		
-		Assert.assertEquals("shopify", filter.matches(req));
+		Assert.assertTrue(filter.matches(req));
 	}
 	
 

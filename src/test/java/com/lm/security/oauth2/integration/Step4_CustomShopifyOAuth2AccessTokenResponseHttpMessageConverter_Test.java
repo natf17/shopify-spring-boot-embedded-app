@@ -22,24 +22,34 @@ import org.springframework.web.client.HttpMessageConverterExtractor;
 
 import com.lm.security.converter.CustomShopifyOAuth2AccessTokenResponseHttpMessageConverter;
 
+/*
+ * Test the fourth "step": Shopify responds with a token, and we create the appropriate response objects
+ * 
+ * 	- In step 1, we redirected to Shopify for authorization
+ * 	- In step 2, Shopify responds by sending the authorization code in the url
+ *  - In step 3, we prepare a POST request to obtain the OAuth token
+ *  ... In step 4, we make sure we create a valid OAuth2AccessTokenResponse with Shopify's response
+ * 
+ * In production, OAuth2LoginAuthenticationProvider would obtain the OAuth2AccessTokenResponse
+ * 
+ */
 public class Step4_CustomShopifyOAuth2AccessTokenResponseHttpMessageConverter_Test {
 	
 
 	/*
-	 * Test the ShopifyAuthorizationCodeTokenResponseClient's
+	 * Test the ShopifyAuthorizationCodeTokenResponseClient's 
 	 * CustomShopifyOAuth2AccessTokenResponseHttpMessageConverter.
 	 * 
-	 * The Step2 test verified that a valid OAuth2AuthorizationCodeGrantRequest
-	 * was passed into the tokenReponseClient. Now, make sure the tokenReponseClient 
-	 * prepares a valid POST request using the default FormHttpMessageConverter.
 	 * 
-	 * Given a response with body:
+	 * Given a response from Shopify with the body:
 	 * 
 	 * {	"access_token": "...",
 	 * 		"scope": "write_orders,read_customers"
 	 * }
 	 * 
-	 * Create a valid OAuth2AccessTokenResponse
+	 * Expect a valid OAuth2AccessTokenResponse. We check it has:
+	 * 		1. The correct "access_token" value
+	 * 		2. The correct "scopes"
 	 * 
 	 */
 	
@@ -54,7 +64,7 @@ public class Step4_CustomShopifyOAuth2AccessTokenResponseHttpMessageConverter_Te
 		
 		String responseJson = "{\"access_token\": \"" + access_token + "\",\"scope\": \"" + scope + "\"}";
 		
-		// the mock barebones Shopify response
+		// Mock the barebones Shopify response
 		ClientHttpResponse mockResponse = mock(ClientHttpResponse.class);
 		
 		HttpHeaders responseHeaders = new HttpHeaders();
@@ -76,7 +86,11 @@ public class Step4_CustomShopifyOAuth2AccessTokenResponseHttpMessageConverter_Te
 		OAuth2AccessTokenResponse tokenResponse = extr.extractData(mockResponse);
 		OAuth2AccessToken tokenObj = tokenResponse.getAccessToken();
 		
+		
+		// 1. The correct "access_token" value
 		Assert.assertEquals(access_token, tokenObj.getTokenValue());
+		
+		// 2. The correct "scopes"
 		Assert.assertTrue(tokenObj.getScopes().containsAll(scopes));
 		
 

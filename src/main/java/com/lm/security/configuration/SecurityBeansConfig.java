@@ -17,6 +17,8 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 
 import com.lm.security.authentication.CipherPassword;
 import com.lm.security.authentication.ShopifyVerificationStrategy;
@@ -111,6 +113,14 @@ public class SecurityBeansConfig {
 	@Bean
 	public ShopifyVerificationStrategy shopifyVerficationStrategy(ClientRegistrationRepository clientRegistrationRepository) {
 		return new ShopifyVerificationStrategy(clientRegistrationRepository, customAuthorizationRequestRepository());
+	}
+	
+	@Bean
+	public CsrfTokenRepository csrfTokenRepository() {
+		CookieCsrfTokenRepository repo = new CookieCsrfTokenRepository();
+		repo.setCookieHttpOnly(false);
+		
+		return repo;
 	}
 
 }

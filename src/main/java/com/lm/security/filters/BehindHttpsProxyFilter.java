@@ -45,7 +45,7 @@ public class BehindHttpsProxyFilter implements Filter {
 			throws IOException, ServletException {
 		
 		HttpServletRequest req = (HttpServletRequest)request;
-				
+
 		if(!redirectionPath.matches(req) && !loginPath.matches(req)) {
 
 			chain.doFilter(request, response);

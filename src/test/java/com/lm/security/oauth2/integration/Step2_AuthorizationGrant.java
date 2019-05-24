@@ -1,6 +1,8 @@
 package com.lm.security.oauth2.integration;
 
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -22,6 +24,7 @@ import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.encrypt.Encryptors;
@@ -43,12 +46,20 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import com.lm.ShopifyEmbeddedAppSpringBootApplication;
 import com.lm.security.authentication.CipherPassword;
-import com.lm.security.oauth2.integration.config.DisabledShopifyVerfificationConfig;
+import com.lm.security.authentication.ShopifyVerificationStrategy;
 import com.lm.security.oauth2.integration.config.TestConfig;
 
-
+/*
+ * Test the second "step": Shopify calls the redirection uri
+ * 
+ * 	- In step 1, we redirected to Shopify for authorization
+ * 	... In step 2, Shopify responds by sending the authorization code in the url
+ * 
+ * We stop right when we are about to prepare a request to obtain the OAuth token from Shopify.
+ * 
+ */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes= {ShopifyEmbeddedAppSpringBootApplication.class, TestConfig.class, DisabledShopifyVerfificationConfig.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes= {ShopifyEmbeddedAppSpringBootApplication.class, TestConfig.class})
 @TestPropertySource(locations="classpath:test-application.properties")
 @AutoConfigureMockMvc
 public class Step2_AuthorizationGrant {
@@ -64,6 +75,9 @@ public class Step2_AuthorizationGrant {
 	
 	@Autowired
 	private CipherPassword cipherPassword;
+	
+	@MockBean
+	private ShopifyVerificationStrategy strategyMock;
 	
 	private String SESSION_ATTRIBUTE_NAME = HttpSessionOAuth2AuthorizationRequestRepository.class.getName() +  ".AUTHORIZATION_REQUEST";
 	
@@ -90,18 +104,20 @@ public class Step2_AuthorizationGrant {
 		MvcResult mR = this.mockMvc.perform(get("/install/shopify?shop=" + SHOP + "&timestamp=dsd&hmac=sdfasrf4324")).andReturn();
 
 		HttpSession rSession = mR.getRequest().getSession();
-		System.out.println(rSession);
-		System.out.println(rSession.getAttributeNames().nextElement());
 		
 		oAuth2AuthorizationRequests = (Map<String, OAuth2AuthorizationRequest>) rSession.getAttribute(SESSION_ATTRIBUTE_NAME);
-		System.out.println(oAuth2AuthorizationRequests);
+
 	}
 	
 
 	/* 
-	 * Test OAuth2LoginAuthenticationFilter prepares a POST request 
-	 * by capturing the OAuth2AuthorizationCodeGrantRequest sent to 
-	 * OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>
+	 * 
+	 * We check to make sure our application responded appropriately when Shopify sent the authorization
+	 * code by checking the object that's going to be used to request the token.
+	 * 
+	 * We do this by capturing the OAuth2AuthorizationCodeGrantRequest sent to 
+	 * OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>, which would
+	 * then make the POST request for a token.
 	 * 
 	 * Check:
 	 * 
@@ -111,14 +127,16 @@ public class Step2_AuthorizationGrant {
 	 * 4. The code passed by "Shopify" in the url is in OAuth2AuthorizationRequest
 	 * 5. The redirectUri in the OAuth2AuthorizationRequest 
 	 * 
-	 * If test is successful: the OAuth2AuthorizationCodeGrantRequest
-	 * that the accessTokenResponseClient has all necessary, correct information
-	 * to request the token from Shopify
+	 * If test is successful: the OAuth2AuthorizationCodeGrantRequest has all necessary, correct
+	 * information so that the accessTokenResponseClient can request the token from Shopify
 	 * 
 	 */
 	@Test
 	public void whenShopifyJSRedirectsThenObtainAuthenticationCode() throws Exception {
+		doReturn(true).when(strategyMock).isShopifyRequest(any());
+		doReturn(true).when(strategyMock).hasValidNonce(any());
 		
+		// Prepare the session
 		
 		// For the nonce Shopify requires, use the one generated previously by Spring
 		Iterator<Entry<String, OAuth2AuthorizationRequest>> it = oAuth2AuthorizationRequests.entrySet().iterator();
@@ -129,16 +147,16 @@ public class Step2_AuthorizationGrant {
 		
 
 		
-		// configure mock accessTokenResponseClient (used by OAuth2LoginAuthenticationProvider's authenticate(auth))
-		// the request itself should fail
+		/* Configure mock accessTokenResponseClient (used by OAuth2LoginAuthenticationProvider's authenticate(auth))
+		 * The request itself should fail; we don't want a token response at this point.
+		 */
 		when(accessTokenResponseClient.getTokenResponse(ArgumentMatchers.any())).thenThrow(new OAuth2AuthorizationException(new OAuth2Error("502")));
 		
 		this.mockMvc.perform(get("/login/app/oauth2/code/shopify?code=" + CODE + "&hmac=" + HMAC + "&timestamp=" + TIMESTAMP + "&state=" + state + "&shop=" + SHOP).session(session)).andReturn();
 
 		ArgumentCaptor<OAuth2AuthorizationCodeGrantRequest> grantRequest = ArgumentCaptor.forClass(OAuth2AuthorizationCodeGrantRequest.class);
 		
-		// ... But
-		// assert...
+		// 1. The OAuth2AccessTokenResponseClient mock was called
 		verify(accessTokenResponseClient).getTokenResponse(grantRequest.capture());
 		
 		OAuth2AuthorizationCodeGrantRequest capturedArg = grantRequest.getValue();
@@ -149,20 +167,22 @@ public class Step2_AuthorizationGrant {
 		
 		Pattern p = Pattern.compile(".*/login/app/oauth2/code/shopify");
 		
+		// 2. The clientId of the ClientRegistration matches the one in TestConfig
 		Assert.assertEquals("testId", registration.getClientId());
-		Assert.assertEquals(state, authReq.getState());
-		Assert.assertEquals(state, authResp.getState());
-		Assert.assertEquals(CODE, authResp.getCode());
 		
+		// 3. The state generated in @Before(AuthorizationRequest) is in OAuth2AuthorizationRequest
+		Assert.assertEquals(state, authReq.getState());
+		
+		// 4. The code passed by "Shopify" in the url is in OAuth2AuthorizationRequest
+		Assert.assertEquals(state, authResp.getState());
+
+		
+		// 5. The redirectUri in the OAuth2AuthorizationRequest 
 		Matcher matcher = p.matcher(authResp.getRedirectUri());
 		Assert.assertTrue(matcher.matches());
-		
-		// The DefaultAuthorizationCodeTokenResponseClient takes care of preparing the POST
+				
 		
 	}
-	
-	
-	
-	
+
 
 }

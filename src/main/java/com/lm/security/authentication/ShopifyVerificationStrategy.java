@@ -45,6 +45,10 @@ public class ShopifyVerificationStrategy {
 	 * 1. Obtains the hmac parameter from the query string
 	 * 2. Obtains the client secret using the HttpServletRequest
 	 * 3. Passes the query string, hmac, and secret to overloaded method.
+	 * 
+	 * This method checks in case the query string has been URL encoded
+	 * 
+	 * Tomcat by default decodes request parameters, so hmac is expected to be url decoded
 	 */
 	public boolean isShopifyRequest(HttpServletRequest request) {
 		Map<String,String[]> requestParameters = this.getRequestParameters(request);
@@ -95,16 +99,20 @@ public class ShopifyVerificationStrategy {
 		String processedQuery = rawQueryString.replaceFirst(Pattern.quote(hmacQueryStringPiece), "");
 				
 		if(rawQueryString.equals(processedQuery)) {
+			// hmacQueryStringPiece not found
 			// maybe the hmac parameter is the last parameter
 			
 			processedQuery = rawQueryString.replaceFirst(Pattern.quote("&" + HMAC_PARAMETER + "=" + hmac), "");
 
 			if(rawQueryString.equals(processedQuery)) {
 				// hmac not found 
-				// it should have been found because the hmac parameter should be from query string)
-				throw new RuntimeException("No HMAC found.");
+				// it should have been found because the hmac parameter should be from query string
+				// ... unless there is an encoding issue
+				// (hmac as it appears in query string is encoded, whereas in parameter map it is decoded
+				return false;
 
 			}
+			
 		}
 		
 		String shaOfQuery = hash(secret, processedQuery);

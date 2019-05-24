@@ -10,7 +10,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import com.lm.security.web.ShopifyRedirectStrategy;
 
-
+/*
+ * Small tests of methods used throughout
+ */
 public class UtilityTest {
 
 	@Test
@@ -30,7 +32,6 @@ public class UtilityTest {
 		.fromUriString(s1).build().toString();
 		
 		Assert.assertEquals(s1, s2);
-		
 		
 	}
 	
