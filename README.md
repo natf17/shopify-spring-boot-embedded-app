@@ -5,34 +5,47 @@ How can we use Shopify's default OAuth offline access token in a Spring Boot app
 
 We assume you know your way around the Shopify developer site to create apps and development stores. Once you have a development store, create a private app.
 
-1. Copy the API key and API key secret from the Shopify site.
-2. Store them, along with the desired scope, in the application.properties:
+1. Fill out "App name" with the name of your choice.
+2. Add your "App URL": 
+	- `https://{your-hostname}/install/shopify`
+3. For "Whitelisted redirection URL(s)" add:
+	- `https://{your-hostname}/login/app/oauth2/code/shopify`
+Now that you've created your app, you're given an API key and an API key secret.
+4. Copy the API key and API key secret from the Shopify site.
+5. Store them, along with the desired scope, in `application.properties`:
 
 ```
-shopify.client.client_id={your key}
-shopify.client.client_secret={your key secret}
-shopify.client.scope={scope1,scope2,...}
+shopify.client.client_id=your-key
+shopify.client.client_secret=your-key-secret
+shopify.client.scope=scope1,scope2,...
 ```
-3. Choose the salt and password that the Spring encryptors will use to encrypt the token and add them to your application.properties:
+6. Choose the salt and password that the Spring encryptors will use to encrypt the token and add them to your `application.properties`:
 
 ```
-lm.security.cipher.password={your password}
-lm.security.cipher.salt={your salt}
+lm.security.cipher.password=your-passwords
+lm.security.cipher.salt=your-salt
 ```
 
-4. Whether you're using ngrok, or your own server, make sure you use HTTPS to comply with Shopify's security requirements. 
+7. Whether you're using ngrok, or your own server, make sure you use HTTPS to comply with Shopify's security requirements. 
 
-5. Add the following information to your app on Shopify:
-	- App url: https://{hostname}/install/shopify
-	- Whitelisted redirection urls: https://{hostname}/login/app/oauth2/code/shopify
+8. Make sure your app is running and live at the hostname you specified.
 
-6. That's it!
+9. That's it!
 
-Try out the following URIs:
-- `/install/shopify?shop={your store}`: to log in
+Try out the following endpoints from your browser:
+- `/install/shopify?shop={your-store-name.myshopify.com}`: to log in (and install the app on the given store)
 - `/init`: to log in by entering your store in a form
 - `/products`: a secure endpoint
 - `/logout`: to log out
+
+For example, say you have a store with the name "mysamplestore".
+1. Go to `https://{your-hostname}/install/shopify?shop=mysamplestore.myshopify.com`
+2. Follow the instruction on the browser to authenticate.
+3. If this is the first time, install the store.
+4. If you go to the Shopify Admin for "mysamplestore", under Apps, you should see the new app you installed.
+5. Click on the app from the Shopify Admin.
+6. This should load the embedded app; by default, you should see "WELCOME".
+
 
 You can change the defaults in the `SecurityConfig` class in the `com.lm.security.configuration` package.
 
