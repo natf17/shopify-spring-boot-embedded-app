@@ -67,15 +67,20 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 			return null;
 		}
 
-		
 		// extract the registrationId (ex: "shopify")
 		String registrationId;
 		
 		if (this.authorizationRequestMatcher.matches(request)) {
 			registrationId = this.authorizationRequestMatcher
 					.extractUriTemplateVariables(request).get("registrationId");
+
+			if(registrationId == null || registrationId.isEmpty()) {
+
+				throw new IllegalArgumentException("Invalid registration id");
+			}
 		} else {
 			return null;
+
 		}
 
 		// At this point, either the request came from Shopify, or make sure shop param was provided
@@ -94,7 +99,7 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 		if (clientRegistration == null) {
 			throw new IllegalArgumentException("Invalid Client Registration: " + registrationId);
 		}
-		
+
 		// only the Authorization code grant is accepted
 		OAuth2AuthorizationRequest.Builder builder;
 		if (AuthorizationGrantType.AUTHORIZATION_CODE.equals(clientRegistration.getAuthorizationGrantType())) {
@@ -123,7 +128,7 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 
 		// Save the OAuth2AuthorizationRequest
 		customAuthorizationRequestRepository.saveAuthorizationRequest(authorizationRequest, request);
-		
+
 		// DO NOT redirect, build redirecturi: DefaultRedirectStrategy		
 		authorizationRedirectStrategy.saveRedirectAuthenticationUris(request, authorizationRequest);
 		
