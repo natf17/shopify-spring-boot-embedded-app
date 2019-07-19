@@ -10,7 +10,7 @@ apiKey: <span th:text='${#authentication.principal.attributes.get("shopify_clien
 <br>
 shopOrigin: <span th:text='${#authentication.principal.name}'>none found</span>
 <br>
-login for this session from embedded app?: <span th:text="${#session.getAttribute('SHOPIFY_EMBEDDED_APP') != null} ? ${#session.getAttribute('SHOPIFY_EMBEDDED_APP') : 'no'}">Unknown</span>
+login for this session from embedded app?: <span th:text="${#session.getAttribute('SHOPIFY_EMBEDDED_APP') != null} ? ${#session.getAttribute('SHOPIFY_EMBEDDED_APP')} : 'false'}">Unknown</span>
 <br>
 </p>
 
