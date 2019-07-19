@@ -27,10 +27,8 @@ import com.lm.security.service.ShopifyStore;
  * ShopifyOriginToken to determine whether this request came from Shopify.
  * 
  * If it did, this filter attempts to find a token for the store.
- * If there is no token, the SecurityContextHolder's Authentication is left untouched.
  * 
- * If the request did not come from Shopify, the SecurityContextHolder's Authentication is left untouched.
-
+ * This filter ensures that after this filter, the request has no ShopifyOriginToken
  */
 
 public class ShopifyExistingTokenFilter extends GenericFilterBean {
@@ -57,7 +55,6 @@ public class ShopifyExistingTokenFilter extends GenericFilterBean {
 			return;
 
 		}
-
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
 		ShopifyOriginToken originToken = null;
@@ -73,22 +70,31 @@ public class ShopifyExistingTokenFilter extends GenericFilterBean {
 				if(oauth2Token != null) {
 
 					this.setToken(oauth2Token);
+				} else {
+					// If the store has not been installed, ShopifyOriginToken is still in the SecurityContextHolder
+					// Remove it
+					clearAuthentication();
 				}
 				
 			}
-			
-			// If the store has not been installed, ShopifyOriginToken is still in the SecurityContextHolder
-			// Remove it
-			if(SecurityContextHolder.getContext().getAuthentication() instanceof ShopifyOriginToken) {
-				SecurityContextHolder.getContext().setAuthentication(null);
+			// just in case the ShopifyOriginToken indicates the req. isn't from Shopify
+			else {
+				clearAuthentication();
 			}
 			
-			
+		} else {
+			// if there's no ShopifyOriginToken, leave whatever Authentication object is there
 		}
 		
 		chain.doFilter(request, response);
 		
 		
+	}
+	
+	private void clearAuthentication() {
+		if(SecurityContextHolder.getContext().getAuthentication() instanceof ShopifyOriginToken) {
+			SecurityContextHolder.getContext().setAuthentication(null);
+		}
 	}
 	
 	private void setToken(OAuth2AuthenticationToken oauth2Token) {

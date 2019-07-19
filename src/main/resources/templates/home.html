@@ -24,6 +24,9 @@
 		  // If the current window is the 'child', change the parent's URL with ShopifyApp.redirect
 		  } else {
 			  console.log("In child" + "url: " + redirectFromIFramePath);
+			  // if there's no redirect, it's because the store has been installed, but it doesn't exist
+			  // in the app database. Logging in from the browser will allow the app to store the token.
+			  console.log("If you are seeing this, please login directly from your browser, not the embedded app.")
 		    ShopifyApp.redirect(redirectFromIFramePath);
 		  }
 		  
@@ -37,7 +40,16 @@
  
 </head>
 <body>
-<h1>WELCOME</h1>
- <a href="/products" >Protected resource</a>
+<div sec:authorize="!isAuthenticated()">
+  There has been a problem logging in from the embedded app. Please log in directly from your browser.
+  </div>
+  
+  <div sec:authorize="isAuthenticated()">	
+	<h1>WELCOME</h1>
+ 	<a href="/products" >Protected resource</a>
+  </div>
+
+
+
 </body>
 </html>
