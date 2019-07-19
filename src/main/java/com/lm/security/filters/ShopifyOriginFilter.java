@@ -103,12 +103,13 @@ public class ShopifyOriginFilter implements Filter {
 		} else {
 
 			if(comesFromShopify) {
-
+				setEmbeddedApp((HttpServletRequest)request);
 				if(!isAlreadyAuthenticated) {
 					SecurityContextHolder.getContext().setAuthentication(new ShopifyOriginToken(true));
-					setEmbeddedApp((HttpServletRequest)request);
-
+					
 				}
+			} else {
+				removeEmbeddedApp((HttpServletRequest)request);
 			}
 
 		}
@@ -166,6 +167,12 @@ public class ShopifyOriginFilter implements Filter {
 		}
 	}
 	
+	private void removeEmbeddedApp(HttpServletRequest req) {
+		HttpSession session = req.getSession(false);
+		if(session != null) {
+			session.removeAttribute(SHOPIFY_EMBEDDED_APP);
+		}
+	}	
 	public void setAccessDeniedHandler(AccessDeniedHandler handler) {
 		this.accessDeniedHandler = handler;
 	}
