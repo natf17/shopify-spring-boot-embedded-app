@@ -38,11 +38,13 @@ import com.lm.security.authentication.ShopifyVerificationStrategy;
  * 
  * If not, the ShopifyOriginToken is not set.
  * 
- * Also, if this request matches the installation path (/install/**) and it comes from Shopify, and if it isn't already authenticated), 
+ * Also, for every request that matches the installation path (/install/**) and comes from Shopify, 
  * a session attribute is set to note that this is an embedded app:
  * 
  * 
  * session.addAttribute("SHOPIFY_EMBEDDED_APP", true);
+ * 
+ * If not, it's removed.
  * 
  */
 public class ShopifyOriginFilter implements Filter {
@@ -101,7 +103,6 @@ public class ShopifyOriginFilter implements Filter {
 			}
 			
 		} else {
-
 			if(comesFromShopify) {
 				setEmbeddedApp((HttpServletRequest)request);
 				if(!isAlreadyAuthenticated) {
