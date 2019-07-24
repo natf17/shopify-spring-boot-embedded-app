@@ -26,9 +26,11 @@ import com.lm.security.service.ShopifyStore;
  * This filter matches the installation path (/install/shopify) and checks the SecurityContextHolder for a 
  * ShopifyOriginToken to determine whether this request came from Shopify.
  * 
- * If it did, this filter attempts to find a token for the store.
+ * If it did, this filter attempts to find a token for the store and set it as the Authentication.
+ * By default, it uses ShopifyOAuth2AuthorizedClientService to load the OAuth2AuthorizedClient.
  * 
- * This filter ensures that after this filter, the request has no ShopifyOriginToken
+ * This filter ensures that after this filter, the request has no ShopifyOriginToken.
+ * The Authentication will either be null, or an OAuth2AuthenticationToken.
  */
 
 public class ShopifyExistingTokenFilter extends GenericFilterBean {

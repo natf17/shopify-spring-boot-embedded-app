@@ -16,7 +16,16 @@ import org.springframework.security.oauth2.core.http.converter.OAuth2AccessToken
 import org.springframework.util.StringUtils;
 
 /*
- * This converter is a OAuth2AccessTokenResponseHttpMessageConverter but with a custom response converter.
+ * This converter "is a" OAuth2AccessTokenResponseHttpMessageConverter (the default), but with a custom response
+ * converter. It's invoked by a decorated DefaultAuthorizationCodeTokenResponseClient to obtain a token from Shopify.
+ * 
+ * Although the default `OAuth2AccessTokenResponseHttpMessageConverter` is used to write the request, this class provides a
+ * custom converter to read the response.
+ * 
+ * This is necessary because the default converter expects 
+ * 	- a "token_type" parameter in the response along with the token, but Shopify does not send it
+ * 	- the scope string to be delimited by " ", but Shopify delimits the scopes with ","
+ * 
  */
 public class CustomShopifyOAuth2AccessTokenResponseHttpMessageConverter extends OAuth2AccessTokenResponseHttpMessageConverter {
 

@@ -21,12 +21,20 @@ import com.lm.security.converter.CustomShopifyOAuth2AccessTokenResponseHttpMessa
 
 /*
  * This implementation of OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>
- * modifies the OAuth2AuthorizationCodeGrantRequest's clientRegistration by using the shop name, 
- * which it expects to find as an additional parameter in the OAuth2AuthorizationRequest)
- * to generate a valid tokenUri.
+ * replaces (ultimately decorating) the default DefaultAuthorizationCodeTokenResponseClient. It's invoked by the 
+ * default OAuth2LoginAuthenticationProvider.
  * 
- * It also makes sure the shop name is available later (used by the OAuth2UserService) by saving the shop name
- * as an additional parameter in the OAuth2AccessTokenResponse
+ * This class has 3 main functions:
+ * 
+ * It customizes the DefaultAuthorizationCodeTokenResponseClient that it is decorating by giving it a
+ * CustomOAuth2AccessTokenResponseHttpMessageConverter.
+ * 
+ * It expects to find an additional parameter in the OAuth2AuthorizationRequest: the shop name.
+ * Since in Shopify every store has a unique tokenUri, this class uses the shop name to generate the store-specific
+ * tokenUri, which it uses to create a new "store-specific ClientRegistration."
+ * 
+ * It intercepts the default response client's OAuth2AccessTokenResponse, instead returning a new OAuth2AccessTokenResponse
+ * that contains the shop name as an additional parameter, since it'll be needed later (OAuth2UserService needs it).
  * 
  * 
  */

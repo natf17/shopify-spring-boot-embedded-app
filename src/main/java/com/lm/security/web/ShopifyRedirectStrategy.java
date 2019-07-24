@@ -12,7 +12,10 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /*
- * Instead of redirecting, the redirect uris are added to the request as attributes.
+ * Decorates the default DefaultRedirectStrategy, and is invoked by ShopifyOAuth2AuthorizationRequestResolver.
+ * 
+ * Instead of redirecting, it saves 2 authorization redirection URIs as request attributes. This allows for
+ * "redirecting" from an iFrame in an embedded app setting.
  */
 public class ShopifyRedirectStrategy extends DefaultRedirectStrategy {
 	public final String I_FRAME_REDIRECT_URI = "/oauth/authorize";

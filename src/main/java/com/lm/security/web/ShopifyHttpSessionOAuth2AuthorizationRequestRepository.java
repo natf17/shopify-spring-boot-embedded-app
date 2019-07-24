@@ -10,6 +10,21 @@ import org.springframework.security.oauth2.client.web.HttpSessionOAuth2Authoriza
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
+/*
+ * This class replaces the default HttpSessionOAuth2AuthorizationRequestRepository that's invoked by:
+ * 	- ShopifyOAuth2AuthorizationRequestResolver: to save the OAuth2AuthorizationRequest
+ * 	- ShopifyVerificationStrategy to extract the current OAuth2AuthorizationRequest
+ * 
+ * Why the need to replace the default?
+ * 
+ * In ShopifyOAuth2AuthorizationRequestResolver, when we call the saveAuthorizationRequest() method, we don't
+ * have an HttpServletResponse. This class is functionally identical to the default, but with a different method signature.
+ * The OAuth2AuthorizationRequest is saved in the session as a Map<String, OAuth2AuthorizationRequest>.
+ * 
+ * In ShopifyVerificationStrategy, obtaining the client secret requires obtaining the saved OAuth2AuthorizationRequest,
+ * or sometimes might require extracting the registration id from the request path to search for the ClientRegistration
+ * (and then obtain the client secret).
+ */
 public class ShopifyHttpSessionOAuth2AuthorizationRequestRepository {
 	public static final String DEFAULT_AUTHORIZATION_REQUEST_ATTR_NAME =
 			HttpSessionOAuth2AuthorizationRequestRepository.class.getName() +  ".AUTHORIZATION_REQUEST";

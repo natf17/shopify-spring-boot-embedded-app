@@ -20,7 +20,7 @@ import com.lm.security.configuration.SecurityBeansConfig;
 
 
 /*
- * If the request matches uninstallEndpoint/shopify:
+ * If the request matches uninstallEndpoint/shopify, "/store/uninstall/shopify":
  * 		1. Delegate to ShopifyVerificationStrategy to validate the header
  * 		2. Call doUninstall(...,...)
  * 		3. Call uninstallSuccess(...,..) upon success

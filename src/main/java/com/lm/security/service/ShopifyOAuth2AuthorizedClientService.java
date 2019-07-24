@@ -8,9 +8,13 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 /*
  * Invoked by OAuth2LoginAuthenticationFilter indirectly when it invokes 
  * AuthenticatedPrincipalOAuth2AuthorizedClientRepository to save the OAuth2AuthorizedClient.
+ * It's also invoked by ShopifyExistingFilter to see if, in an embedded app, the shop has already installed this app
  * 
- * This client service uses the custom tokenService to save the store in a database,
+ * It replaces the default InMemoryOAuth2AuthorizedClientService` (see OAuth2ClientConfigurerUtils)
+ * 
+ * This client service uses the custom tokenService to save the store in a database (instead of in memory),
  * or to update the store credentials if this store has already been "installed".
+ *
  * 
  * When building the OAuth2LoginFilter, OAuth2ClientConfigurerUtils finds this bean.
  * 

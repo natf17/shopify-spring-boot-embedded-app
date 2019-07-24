@@ -8,6 +8,8 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import com.lm.security.web.ShopifyOAuth2AuthorizationRequestResolver;
 
 /*
+ * Replaces DefaultOAuth2UserService.
+ * 
  * This class is called by OAuth2LoginAuthenticationProvider when creating the OAuth2LoginAuthenticationToken.
  * 
  * Since the default OAuth2LoginAuthenticationProvider sets the OAuth2User as the principal,

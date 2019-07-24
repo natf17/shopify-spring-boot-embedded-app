@@ -23,6 +23,19 @@ import org.springframework.web.util.UriUtils;
 
 import com.lm.security.web.ShopifyHttpSessionOAuth2AuthorizationRequestRepository;
 
+/*
+ * This class is invoked by ShopifyOriginFilter and UninstallFilter.
+ * It uses ClientRegistrationRepository and ShopifyHttpSessionOAuth2AuthorizationRequestRepository.
+ * 
+ * This class ensures a request came from Shopify by checking for a valid HMAC parameter.
+ * 
+ * But for the "whitelisted redirection url", it is also necessary that it provide a nonce in the "state" parameter.
+ * Since this is a redirection url, the OAuth2AuthorizationRequest should have already been saved in the HttpSession.
+ * See ShopifyHttpSessionOAuth2AuthorizationRequestRepository.
+ * 
+ * This class also provides the logic to verify that an uninstall request came from Shopify by inspecting certain request headers.
+ * 
+ */
 public class ShopifyVerificationStrategy {
 	public static final String NONCE_PARAMETER = OAuth2ParameterNames.STATE;
 	public static final String HMAC_PARAMETER = "hmac";

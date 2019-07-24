@@ -16,8 +16,8 @@ import com.lm.security.configuration.SecurityConfig;
 /*
  * The NoRedirectSuccessHandler is invoked by OAuth2LoginAuthenticationFilter upon successful authentication.
  * 
- * This success handler wraps the default SavedRequestAwareAuthenticationSuccessHandler
- * so that it will perform as intended, but without the redirect support.
+ * This success handler decorates the default SavedRequestAwareAuthenticationSuccessHandler
+ * so that it will perform as intended, but without the redirect support (we can't redirect in an embedded app).
  * Thus, the DefaultRedirectStrategy is replaced with an empty implementation.
  * 
  * Afterwards, however, it will forward to the the "authentication url" resource.

@@ -14,6 +14,8 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 /* 
  * 
+ * This filter should be placed before OAuth2LoginAuthenticationFilter.
+ * 
  * A problem occurs if this application is running behind a reverse proxy, because Shopify requires 
  * SSL connections, and although the reverse proxy might connect to Shopify via SSL, the HttpServletRequest
  * object will still have "http" as its scheme. This is problematic, because although the 
