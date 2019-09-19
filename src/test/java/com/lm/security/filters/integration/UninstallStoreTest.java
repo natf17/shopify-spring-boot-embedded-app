@@ -49,7 +49,7 @@ public class UninstallStoreTest {
 	 */
 	@Test
 	public void whenValidRequest_thenExtractBody() throws Exception {
-		this.mockMvc.perform(post("/store/uninstall/shopify").content("{\"shop_id\": 954889,\"shop_domain\": \"snowdevil.myshopify.com\"}")).andExpect(status().is(200));
+		this.mockMvc.perform(post("/store/uninstall/shopify").secure(true).content("{\"shop_id\": 954889,\"shop_domain\": \"snowdevil.myshopify.com\"}")).andExpect(status().is(200));
 		
 	}
 	
@@ -60,7 +60,7 @@ public class UninstallStoreTest {
 	 */
 	@Test
 	public void whenNoStore_thenFail() throws Exception {
-		this.mockMvc.perform(post("/store/uninstall/shopify").content("{\"shop_id\": 954889}")).andExpect(status().is(403));
+		this.mockMvc.perform(post("/store/uninstall/shopify").secure(true).content("{\"shop_id\": 954889}")).andExpect(status().is(403));
 		
 		
 	}

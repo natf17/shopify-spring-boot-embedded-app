@@ -19,7 +19,6 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.logout.LogoutFilter;
 
 import com.lm.security.authentication.ShopifyVerificationStrategy;
-import com.lm.security.filters.BehindHttpsProxyFilter;
 import com.lm.security.filters.ShopifyExistingTokenFilter;
 import com.lm.security.filters.ShopifyOriginFilter;
 import com.lm.security.filters.UninstallFilter;
@@ -68,10 +67,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 						
 		http.addFilterAfter(new ShopifyOriginFilter(shopifyVerficationStrategy, ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH), LogoutFilter.class);
 		http.addFilterAfter(new ShopifyExistingTokenFilter(this.authorizedClientService, INSTALL_PATH), ShopifyOriginFilter.class);
-		http.addFilterBefore(new BehindHttpsProxyFilter(ANY_AUTHORIZATION_REDIRECT_PATH, ANY_INSTALL_PATH), OAuth2AuthorizationRequestRedirectFilter.class);
-		http.addFilterBefore(new UninstallFilter(UNINSTALL_URI, shopifyVerficationStrategy, authorizedClientService, converter), BehindHttpsProxyFilter.class);
+		http.addFilterBefore(new UninstallFilter(UNINSTALL_URI, shopifyVerficationStrategy, authorizedClientService, converter), OAuth2AuthorizationRequestRedirectFilter.class);
 		
 		http.headers().frameOptions().disable()
+			  .and()
+			  .requiresChannel()
+			  	.anyRequest()
+			  		.requiresSecure()
 			  .and()
 			  .csrf()
 			  	.ignoringAntMatchers(UNINSTALL_URI + "/*")

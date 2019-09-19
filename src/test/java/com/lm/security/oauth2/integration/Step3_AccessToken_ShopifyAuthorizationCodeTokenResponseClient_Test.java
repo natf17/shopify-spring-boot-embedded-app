@@ -52,6 +52,7 @@ import org.springframework.web.client.RestTemplate;
 import com.lm.ShopifyEmbeddedAppSpringBootApplication;
 import com.lm.security.authentication.CipherPassword;
 import com.lm.security.authentication.ShopifyVerificationStrategy;
+import com.lm.security.oauth2.integration.config.HttpsRequestPostProcessor;
 import com.lm.security.oauth2.integration.config.TestConfig;
 import com.lm.security.web.ShopifyAuthorizationCodeTokenResponseClient;
 
@@ -85,6 +86,8 @@ public class Step3_AccessToken_ShopifyAuthorizationCodeTokenResponseClient_Test 
 	
 	@MockBean
 	private ShopifyVerificationStrategy strategyMock;
+	
+	private HttpsRequestPostProcessor httpsPostProcessor = new HttpsRequestPostProcessor();
 	
 	private String SESSION_ATTRIBUTE_NAME = HttpSessionOAuth2AuthorizationRequestRepository.class.getName() +  ".AUTHORIZATION_REQUEST";
 	
@@ -122,7 +125,7 @@ public class Step3_AccessToken_ShopifyAuthorizationCodeTokenResponseClient_Test 
 		
 		
 		// Part 1 - shop will install app, save OAuth2AuthorizationRequest in the session. We retrieve it.
-		MvcResult mR = this.mockMvc.perform(get("/install/shopify?shop=newstoretest.myshopify.com&timestamp=dsd&hmac=sdfasrf4324")).andReturn();
+		MvcResult mR = this.mockMvc.perform(get("/install/shopify?shop=newstoretest.myshopify.com&timestamp=dsd&hmac=sdfasrf4324").secure(true).with(httpsPostProcessor)).andReturn();
 
 		HttpSession rSession = mR.getRequest().getSession();
 		
@@ -142,7 +145,7 @@ public class Step3_AccessToken_ShopifyAuthorizationCodeTokenResponseClient_Test 
 
 		when(accessTokenResponseClient.getTokenResponse(ArgumentMatchers.any())).thenThrow(new OAuth2AuthorizationException(new OAuth2Error("502")));
 		
-		this.mockMvc.perform(get("/login/app/oauth2/code/shopify?code=" + CODE + "&hmac=" + HMAC + "&timestamp=" + TIMESTAMP + "&state=" + state + "&shop=" + SHOP).session(session)).andReturn();
+		this.mockMvc.perform(get("/login/app/oauth2/code/shopify?code=" + CODE + "&hmac=" + HMAC + "&timestamp=" + TIMESTAMP + "&state=" + state + "&shop=" + SHOP).session(session).secure(true).with(httpsPostProcessor)).andReturn();
 
 		ArgumentCaptor<OAuth2AuthorizationCodeGrantRequest> grantRequest = ArgumentCaptor.forClass(OAuth2AuthorizationCodeGrantRequest.class);
 		

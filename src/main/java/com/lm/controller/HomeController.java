@@ -33,7 +33,7 @@ public class HomeController {
 	 */
 	@RequestMapping(path = SecurityConfig.LOGIN_ENDPOINT, method = RequestMethod.GET)
 	public String selectStore() {
-
+		System.out.println("/init");
 		return "selectStore";
 	}
 	

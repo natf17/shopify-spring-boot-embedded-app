@@ -47,6 +47,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import com.lm.ShopifyEmbeddedAppSpringBootApplication;
 import com.lm.security.authentication.CipherPassword;
 import com.lm.security.authentication.ShopifyVerificationStrategy;
+import com.lm.security.oauth2.integration.config.HttpsRequestPostProcessor;
 import com.lm.security.oauth2.integration.config.TestConfig;
 
 /*
@@ -79,6 +80,8 @@ public class Step2_AuthorizationGrant {
 	@MockBean
 	private ShopifyVerificationStrategy strategyMock;
 	
+	private HttpsRequestPostProcessor httpsPostProcessor = new HttpsRequestPostProcessor();
+	
 	private String SESSION_ATTRIBUTE_NAME = HttpSessionOAuth2AuthorizationRequestRepository.class.getName() +  ".AUTHORIZATION_REQUEST";
 	
 	private Map<String, OAuth2AuthorizationRequest> oAuth2AuthorizationRequests;
@@ -101,7 +104,7 @@ public class Step2_AuthorizationGrant {
 
 		jdbc.update("UPDATE STOREACCESSTOKENS SET access_token=?, salt=? WHERE shop='lmdev.myshopify.com'", encryptor.encrypt("sample"), sampleSalt);
 		
-		MvcResult mR = this.mockMvc.perform(get("/install/shopify?shop=" + SHOP + "&timestamp=dsd&hmac=sdfasrf4324")).andReturn();
+		MvcResult mR = this.mockMvc.perform(get("/install/shopify?shop=" + SHOP + "&timestamp=dsd&hmac=sdfasrf4324").secure(true).with(httpsPostProcessor)).andReturn();
 
 		HttpSession rSession = mR.getRequest().getSession();
 		
@@ -152,7 +155,7 @@ public class Step2_AuthorizationGrant {
 		 */
 		when(accessTokenResponseClient.getTokenResponse(ArgumentMatchers.any())).thenThrow(new OAuth2AuthorizationException(new OAuth2Error("502")));
 		
-		this.mockMvc.perform(get("/login/app/oauth2/code/shopify?code=" + CODE + "&hmac=" + HMAC + "&timestamp=" + TIMESTAMP + "&state=" + state + "&shop=" + SHOP).session(session)).andReturn();
+		this.mockMvc.perform(get("/login/app/oauth2/code/shopify?code=" + CODE + "&hmac=" + HMAC + "&timestamp=" + TIMESTAMP + "&state=" + state + "&shop=" + SHOP).session(session).secure(true).with(httpsPostProcessor)).andReturn();
 
 		ArgumentCaptor<OAuth2AuthorizationCodeGrantRequest> grantRequest = ArgumentCaptor.forClass(OAuth2AuthorizationCodeGrantRequest.class);
 		

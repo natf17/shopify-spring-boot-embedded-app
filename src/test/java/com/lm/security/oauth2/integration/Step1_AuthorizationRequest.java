@@ -34,6 +34,7 @@ import com.lm.ShopifyEmbeddedAppSpringBootApplication;
 import com.lm.security.authentication.CipherPassword;
 import com.lm.security.authentication.ShopifyVerificationStrategy;
 import com.lm.security.configuration.SecurityConfig;
+import com.lm.security.oauth2.integration.config.HttpsRequestPostProcessor;
 import com.lm.security.oauth2.integration.config.TestConfig;
 
 /*
@@ -70,6 +71,8 @@ public class Step1_AuthorizationRequest {
 	@MockBean
 	private ShopifyVerificationStrategy strategyMock;
 	
+	private HttpsRequestPostProcessor httpsPostProcessor = new HttpsRequestPostProcessor();
+	
 	private static final String INSTALL_PATH = SecurityConfig.INSTALL_PATH + "/shopify";
 	
 	@Before
@@ -96,7 +99,7 @@ public class Step1_AuthorizationRequest {
 		doReturn(true).when(strategyMock).isShopifyRequest(any());
 		doReturn(true).when(strategyMock).hasValidNonce(any());
 	
-		MvcResult result = this.mockMvc.perform(get(INSTALL_PATH + "?shop=lmdev.myshopify.com&timestamp=dsd&hmac=sdfasrf4324"))
+		MvcResult result = this.mockMvc.perform(get(INSTALL_PATH + "?shop=lmdev.myshopify.com&timestamp=dsd&hmac=sdfasrf4324").secure(true).with(httpsPostProcessor))
 					.andExpect(status().is2xxSuccessful())
 					.andExpect(handler().methodName("installAndHome"))
 					.andExpect(content().string(not(containsString("var redirectFromParentPath = 'https://newstoretest.myshopify.com/admin/oauth/authorize?client_id=testId&redirect_uri=https://localhost/login/app/oauth2/code/shopify&scope=read_inventory,write_inventory,read_products,write_products&state="))))
@@ -121,7 +124,7 @@ public class Step1_AuthorizationRequest {
 	public void whenStoreExistsAndRequestNotFromShopify_thenShowFirstPage() throws Exception {
 
 	
-		MvcResult result = this.mockMvc.perform(get(INSTALL_PATH + "?shop=lmdev.myshopify.com&timestamp=dsd&hmac=sdfasrf4324"))
+		MvcResult result = this.mockMvc.perform(get(INSTALL_PATH + "?shop=lmdev.myshopify.com&timestamp=dsd&hmac=sdfasrf4324").secure(true).with(httpsPostProcessor))
 					.andExpect(status().is2xxSuccessful())
 					.andExpect(handler().methodName("installAndHome"))
 					.andExpect(content().string(containsString("var redirectFromParentPath = 'https://lmdev.myshopify.com/admin/oauth/authorize?client_id=testId&redirect_uri=https://localhost/login/app/oauth2/code/shopify&scope=read_inventory,write_inventory,read_products,write_products&state=")))
@@ -150,7 +153,7 @@ public class Step1_AuthorizationRequest {
 		doReturn(true).when(strategyMock).hasValidNonce(any());
 		doReturn(true).when(strategyMock).isHeaderShopifyRequest(any(), any());
 	
-		MvcResult result = this.mockMvc.perform(get(INSTALL_PATH + "?shop=newstoretest.myshopify.com&timestamp=dsd&hmac=sdfasrf4324"))
+		MvcResult result = this.mockMvc.perform(get(INSTALL_PATH + "?shop=newstoretest.myshopify.com&timestamp=dsd&hmac=sdfasrf4324").secure(true).with(httpsPostProcessor))
 					.andExpect(content().string(containsString("var redirectFromParentPath = 'https://newstoretest.myshopify.com/admin/oauth/authorize?client_id=testId&redirect_uri=https://localhost/login/app/oauth2/code/shopify&scope=read_inventory,write_inventory,read_products,write_products&state=")))
 					.andExpect(content().string(containsString("var redirectFromIFramePath = '/oauth/authorize?client_id=testId&redirect_uri=https://localhost/login/app/oauth2/code/shopify&scope=read_inventory,write_inventory,read_products,write_products&state=")))
 					.andReturn();
@@ -176,7 +179,7 @@ public class Step1_AuthorizationRequest {
 	@Test
 	public void whenStoreDoesNotExistAndRequestNotFromShopify_thenRedirectToShopify() throws Exception {
 	
-		MvcResult result = this.mockMvc.perform(get(INSTALL_PATH + "?shop=newstoretest.myshopify.com&timestamp=dsd&hmac=sdfasrf4324"))
+		MvcResult result = this.mockMvc.perform(get(INSTALL_PATH + "?shop=newstoretest.myshopify.com&timestamp=dsd&hmac=sdfasrf4324").secure(true).with(httpsPostProcessor))
 					.andExpect(content().string(containsString("var redirectFromParentPath = 'https://newstoretest.myshopify.com/admin/oauth/authorize?client_id=testId&redirect_uri=https://localhost/login/app/oauth2/code/shopify&scope=read_inventory,write_inventory,read_products,write_products&state=")))
 					.andExpect(content().string(containsString("var redirectFromIFramePath = '/oauth/authorize?client_id=testId&redirect_uri=https://localhost/login/app/oauth2/code/shopify&scope=read_inventory,write_inventory,read_products,write_products&state=")))
 					.andReturn();
@@ -198,7 +201,7 @@ public class Step1_AuthorizationRequest {
 	@Test
 	public void whenNoValidShopParam_thenRedirect() throws Exception {
 	
-		this.mockMvc.perform(get(INSTALL_PATH + "?timestamp=dsd&hmac=sdfasrf4324"))
+		this.mockMvc.perform(get(INSTALL_PATH + "?timestamp=dsd&hmac=sdfasrf4324").secure(true).with(httpsPostProcessor))
 					.andExpect(status().is3xxRedirection())
 					.andReturn();
 

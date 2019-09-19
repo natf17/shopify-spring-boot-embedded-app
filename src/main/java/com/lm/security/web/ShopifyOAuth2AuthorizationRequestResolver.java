@@ -173,7 +173,7 @@ public class ShopifyOAuth2AuthorizationRequestResolver implements OAuth2Authoriz
 		// EX: "{baseUrl}/oauth2/code/{registrationId}"
 		Map<String, String> uriVariables = new HashMap<>();
 		uriVariables.put("registrationId", clientRegistration.getRegistrationId());
-
+		System.out.println("FULL URL: "+ UrlUtils.buildFullRequestUrl(request));
 		String baseUrl = UriComponentsBuilder.fromHttpUrl(UrlUtils.buildFullRequestUrl(request))
 				.replaceQuery(null)
 				.replacePath(request.getContextPath())
