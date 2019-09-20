@@ -28,12 +28,19 @@ public class HomeController {
 	}
 	
 	/*
+	 * Redirect to /install/shopify
+	 */
+	@RequestMapping(path = SecurityConfig.INSTALL_PATH , method = RequestMethod.GET)
+	public String installRedirect() {
+		return "redirect:" + SecurityConfig.INSTALL_PATH + "/" + SecurityBeansConfig.SHOPIFY_REGISTRATION_ID;
+	}
+	
+	/*
 	 * Called when a store parameter was not given to ANY_INSTALL_PATH
 	 * 
 	 */
 	@RequestMapping(path = SecurityConfig.LOGIN_ENDPOINT, method = RequestMethod.GET)
 	public String selectStore() {
-		System.out.println("/init");
 		return "selectStore";
 	}
 	

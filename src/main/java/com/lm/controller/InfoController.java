@@ -6,13 +6,13 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 
 @Controller
-public class ProductController {
+public class InfoController {
 	
-	@RequestMapping(path = "/products", method = RequestMethod.GET)
-	public String products() {
+	@RequestMapping(path = "/info", method = RequestMethod.GET)
+	public String info() {
 		
 				
-		return "products";
+		return "info";
 	}
 
 }
