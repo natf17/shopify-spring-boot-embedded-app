@@ -1,3 +1,8 @@
+# End-of-life
+Shopify authorization configures the Spring Security filter chain more than had been expected. All the security logic can be separated into a JAR that automatically configures the importing application to function as a Shopify app. For example, to configure landing pages you shouldn't have to go in to the Thymeleaf files the current project provides.
+
+Check out the [new project](https://github.com/natf17/shopify-embedded-app).
+
 # Getting started
 ***************************************
 
